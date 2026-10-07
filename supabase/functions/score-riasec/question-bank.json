@@ -1,0 +1,52 @@
+{
+  "version": "1.0",
+  "_provenance": {
+    "decision": "D-04 / M-10 — OPEN, requires supervisor sign-off and a citation",
+    "note": "Only item 1 exists in the FYP report (Figure 4.6) and is reproduced verbatim. The remaining 35 were drafted in the idiom of the public-domain O*NET Interest Profiler (U.S. Department of Labor), which architecture.md §7.4 names as the appropriate basis. They are NOT a validated instrument and must be verified and cited in §3.4.1 of the thesis before any psychometric claim is made.",
+    "structure": "Six items per dimension, interleaved in R-I-A-S-E-C order so consecutive questions do not probe the same dimension. Dimension mapping is the answer key and is never served to the client (architecture.md §3.3.2C, AC-16).",
+    "scoring": "architecture.md §7.2 — plain sum of the six item values per dimension. No reverse-scored items; see supabase/functions/README.md."
+  },
+  "scale": {
+    "min": 0,
+    "max": 4,
+    "labels": ["Strongly dislike", "Dislike", "Neutral", "Like", "Strongly like"]
+  },
+  "questions": [
+    { "id": 1, "dimension": "R", "text": "I like to work with my hands to build or repair things." },
+    { "id": 2, "dimension": "I", "text": "I enjoy working out why something does not work the way it should." },
+    { "id": 3, "dimension": "A", "text": "I enjoy drawing, painting or designing things." },
+    { "id": 4, "dimension": "S", "text": "I enjoy teaching or explaining things to other people." },
+    { "id": 5, "dimension": "E", "text": "I enjoy persuading people to see things my way." },
+    { "id": 6, "dimension": "C", "text": "I like keeping records accurate and up to date." },
+    { "id": 7, "dimension": "R", "text": "I would like to fix engines or mechanical equipment." },
+    { "id": 8, "dimension": "I", "text": "I like conducting experiments to test an idea." },
+    { "id": 9, "dimension": "A", "text": "I like writing stories, articles or poetry." },
+    { "id": 10, "dimension": "S", "text": "I like helping people work through personal difficulties." },
+    { "id": 11, "dimension": "E", "text": "I would like to start and run my own business." },
+    { "id": 12, "dimension": "C", "text": "I like following a clear set of procedures." },
+    { "id": 13, "dimension": "R", "text": "I would like to operate machinery or power tools." },
+    { "id": 14, "dimension": "I", "text": "I enjoy analysing data to find patterns." },
+    { "id": 15, "dimension": "A", "text": "I would like to play a musical instrument or compose music." },
+    { "id": 16, "dimension": "S", "text": "I would like to care for people who are unwell." },
+    { "id": 17, "dimension": "E", "text": "I like leading a group towards a goal." },
+    { "id": 18, "dimension": "C", "text": "I would like to work with numbers, accounts or budgets." },
+    { "id": 19, "dimension": "R", "text": "I like working outdoors, even in difficult weather." },
+    { "id": 20, "dimension": "I", "text": "I would like to study a scientific subject in depth." },
+    { "id": 21, "dimension": "A", "text": "I enjoy performing for an audience through acting, music or dance." },
+    { "id": 22, "dimension": "S", "text": "I enjoy working in a team to support other people." },
+    { "id": 23, "dimension": "E", "text": "I enjoy selling products or promoting ideas." },
+    { "id": 24, "dimension": "C", "text": "I enjoy organising information into a clear filing system." },
+    { "id": 25, "dimension": "R", "text": "I enjoy assembling things from parts, such as furniture or kits." },
+    { "id": 26, "dimension": "I", "text": "I like reading about new discoveries in science or technology." },
+    { "id": 27, "dimension": "A", "text": "I prefer coming up with original ideas to following a set method." },
+    { "id": 28, "dimension": "S", "text": "I like organising activities for a community or club." },
+    { "id": 29, "dimension": "E", "text": "I would like to negotiate deals or agreements." },
+    { "id": 30, "dimension": "C", "text": "I like checking work carefully for mistakes." },
+    { "id": 31, "dimension": "R", "text": "I would like to install or test wiring, plumbing or equipment." },
+    { "id": 32, "dimension": "I", "text": "I enjoy solving difficult problems step by step." },
+    { "id": 33, "dimension": "A", "text": "I enjoy arranging colours, shapes and layouts so they look right." },
+    { "id": 34, "dimension": "S", "text": "I enjoy listening to people and giving them advice." },
+    { "id": 35, "dimension": "E", "text": "I like making decisions about how a project should be run." },
+    { "id": 36, "dimension": "C", "text": "I would like to manage schedules and appointments." }
+  ]
+}

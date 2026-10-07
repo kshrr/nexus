@@ -1,0 +1,132 @@
+{
+  "version": "1.0",
+  "_provenance": {
+    "decision": "D-11 schema is documented (architecture.md §9.1). D-18 rule CONTENT is OPEN — 'author with supervisor input'.",
+    "note": "This file contains ONLY rules the FYP documents state. Nothing has been invented to pad the rule base. Sources are recorded per rule in `_source`. Expanding it is a supervisor-authoring task, not an implementation task.",
+    "sources": {
+      "R-HEALTH-01": "architecture.md §9.1 worked example, itself from report §3.4.2",
+      "R-ENG-01": "requirements.md §7.7 / report §2.6.4 — 'Strong mathematics + strong science -> engineering, computer science, data science'",
+      "R-DESIGN-01": "requirements.md §7.7 / report §2.6.4 — 'Stronger creative abilities -> design-related fields'",
+      "R-ARCH-01": "requirements.md §7.7 / report §2.3.3 — 'Strong artistic RIASEC + strong mathematics -> architecture, multimedia technology, design engineering'"
+    },
+    "open": "R-ENG-01 and R-ARCH-01 use `subject_domain_strength`, whose aggregation function architecture.md §9.1 does not define. See DOMAIN_AGGREGATION in _shared/rules.ts."
+  },
+  "rules": [
+    {
+      "id": "R-ARCH-01",
+      "_source": "report §2.3.3",
+      "conditions": [
+        {
+          "type": "riasec_letter",
+          "operator": "in_top_n",
+          "value": "A",
+          "n": 3,
+          "label": "Artistic interests"
+        },
+        {
+          "type": "subject_domain_strength",
+          "operator": "eq",
+          "domain": "mathematics",
+          "value": "strong",
+          "label": "Strong in mathematics"
+        }
+      ],
+      "outputs": {
+        "careers": ["Architect", "Multimedia Designer"],
+        "course_fields": ["Architecture", "Multimedia Technology", "Design Engineering"]
+      }
+    },
+    {
+      "id": "R-DESIGN-01",
+      "_source": "report §2.6.4",
+      "conditions": [
+        {
+          "type": "riasec_letter",
+          "operator": "in_top_n",
+          "value": "A",
+          "n": 3,
+          "label": "Artistic interests"
+        },
+        {
+          "type": "riasec_score",
+          "operator": "gte",
+          "dimension": "A",
+          "value": 15,
+          "label": "Strong creative preference"
+        }
+      ],
+      "outputs": {
+        "careers": ["Graphic Designer", "Multimedia Designer"],
+        "course_fields": ["Design", "Multimedia Technology"]
+      }
+    },
+    {
+      "id": "R-ENG-01",
+      "_source": "report §2.6.4",
+      "conditions": [
+        {
+          "type": "subject_domain_strength",
+          "operator": "eq",
+          "domain": "mathematics",
+          "value": "strong",
+          "label": "Strong in mathematics"
+        },
+        {
+          "type": "subject_domain_strength",
+          "operator": "eq",
+          "domain": "science",
+          "value": "strong",
+          "label": "Strong in science"
+        },
+        {
+          "type": "riasec_letter",
+          "operator": "in_top_n",
+          "value": "I",
+          "n": 3,
+          "label": "Investigative interests"
+        }
+      ],
+      "outputs": {
+        "careers": ["Civil Engineer", "Software Engineer", "Data Scientist"],
+        "course_fields": ["Engineering", "Computer Science", "Data Science"]
+      }
+    },
+    {
+      "id": "R-HEALTH-01",
+      "_source": "architecture.md §9.1 / report §3.4.2",
+      "conditions": [
+        {
+          "type": "riasec_letter",
+          "operator": "in_top_n",
+          "value": "I",
+          "n": 3,
+          "label": "Investigative interests"
+        },
+        {
+          "type": "subject_strength",
+          "operator": "eq",
+          "subject": "BIOLOGY",
+          "value": "strong",
+          "label": "Strong in Biology"
+        },
+        {
+          "type": "subject_strength",
+          "operator": "eq",
+          "subject": "CHEMISTRY",
+          "value": "strong",
+          "label": "Strong in Chemistry"
+        },
+        {
+          "type": "interest",
+          "operator": "contains",
+          "value": "health",
+          "label": "Interest in health sciences"
+        }
+      ],
+      "outputs": {
+        "careers": ["Medical Doctor", "Pharmacist"],
+        "course_fields": ["Medicine", "Pharmacy", "Biomedical Science"]
+      }
+    }
+  ]
+}

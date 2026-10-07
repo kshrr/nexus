@@ -1,0 +1,8 @@
+# Supabase project configuration.
+# `project_id` is set when you run `supabase link` against your hosted project.
+# Auth (email confirmations, OTP expiry, SMTP) is configured in the dashboard:
+#   Authentication -> Providers -> Email, and Authentication -> Emails.
+project_id = "nexus"
+
+[db]
+major_version = 15

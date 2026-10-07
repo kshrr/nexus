@@ -1,0 +1,51 @@
+{
+  "version": "1.0",
+  "_provenance": {
+    "decision": "D-05 / M-10 — structure is documented, content is drafted",
+    "note": "architecture.md §7.5 adopts per-letter descriptions composed for the top three dimensions (120 three-letter permutations being impractical). Each block covers the three things the report requires: personality traits, suitable career fields, suitable academic areas (§3.4.1). The prose below is drafted and needs supervisor review before it enters the thesis."
+  },
+  "letters": {
+    "R": {
+      "name": "Realistic",
+      "summary": "You prefer practical, hands-on work with clear, visible results.",
+      "traits": "You like working with tools, machines, materials or the outdoors. You would rather solve a problem by doing than by discussing, and you value skill, reliability and things that work.",
+      "career_fields": "Engineering and technical trades, automotive and aviation, construction and surveying, agriculture and forestry, sports and physical training, security and emergency services.",
+      "academic_areas": "Physics, Additional Mathematics, technical and vocational subjects, design and technology, computer hardware and networking."
+    },
+    "I": {
+      "name": "Investigative",
+      "summary": "You are drawn to understanding how and why things work.",
+      "traits": "You enjoy analysing, researching and thinking a problem through before acting. You are comfortable with abstract ideas and prefer evidence to opinion.",
+      "career_fields": "Medicine and health sciences, scientific research, data science and analytics, software and systems engineering, pharmacy, laboratory and diagnostic work.",
+      "academic_areas": "Biology, Chemistry, Physics, Mathematics and Additional Mathematics, computer science."
+    },
+    "A": {
+      "name": "Artistic",
+      "summary": "You think in ideas and images, and you want room to create.",
+      "traits": "You value originality and self-expression, and you dislike highly repetitive or rigidly structured work. You often see a different way of approaching something.",
+      "career_fields": "Design and multimedia, architecture, advertising and communications, writing and journalism, performing arts, animation and game design.",
+      "academic_areas": "Visual arts, literature and languages, multimedia and design subjects, and — where the work is technical, such as architecture — Mathematics alongside them."
+    },
+    "S": {
+      "name": "Social",
+      "summary": "You are motivated by working with and for other people.",
+      "traits": "You communicate easily, notice how people are doing, and get satisfaction from teaching, supporting or caring for others. You prefer cooperation to competition.",
+      "career_fields": "Teaching and education, nursing and allied health, counselling and social work, human resources, community development, public health.",
+      "academic_areas": "Biology and health-related subjects, languages, history and the humanities, moral or religious studies, psychology where available."
+    },
+    "E": {
+      "name": "Enterprising",
+      "summary": "You like leading, persuading and getting things moving.",
+      "traits": "You are comfortable making decisions, taking responsibility and speaking up. You are drawn to influence, targets and the commercial side of an idea.",
+      "career_fields": "Business management, entrepreneurship, marketing and sales, law, banking and finance, hospitality and event management.",
+      "academic_areas": "Economics, Business Studies, Principles of Accounting, Mathematics, languages and communication subjects."
+    },
+    "C": {
+      "name": "Conventional",
+      "summary": "You work best with order, accuracy and clear procedures.",
+      "traits": "You are organised and precise, you notice errors others miss, and you prefer knowing what the standard is. You bring structure to work that would otherwise drift.",
+      "career_fields": "Accounting and auditing, banking operations, actuarial work, logistics and supply chain, administration, information management, quality assurance.",
+      "academic_areas": "Principles of Accounting, Mathematics, Economics, Business Studies, information and communication technology."
+    }
+  }
+}

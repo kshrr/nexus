@@ -1,0 +1,7 @@
+# Runtime dependencies for the targeted scholarship scraper.
+# Pinned so a weekly CI run cannot change behaviour underneath us.
+requests==2.31.0
+beautifulsoup4==4.12.2
+
+# Test-only
+pytest==8.3.3
