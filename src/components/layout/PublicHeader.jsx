@@ -7,7 +7,6 @@ import { Icon } from '@/components/ui';
 
 // Existing destinations, grouped together for the public navigation.
 const searchLinks = [
-  { to: '/scholarships', label: 'Scholarships', icon: 'scholarship' },
   { to: '/recommendations', label: 'Courses', icon: 'book' },
   { to: '/careers', label: 'Careers', icon: 'career' },
 ];
@@ -79,6 +78,10 @@ export function PublicHeader() {
             }
           }}
         >
+          <SearchLinks onNavigate={closeNavigation} />
+          <NavLink to="/scholarships" className="public-nav-link" onClick={closeNavigation}>
+            Scholarships
+          </NavLink>
           <SearchLinks onNavigate={closeNavigation} />
           <NavLink to="/find-your-path" className="public-nav-link" onClick={closeNavigation}>
             Find Your Path
