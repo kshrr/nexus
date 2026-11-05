@@ -356,6 +356,8 @@ async function fetchGeminiWithRetry(
 async function getCaller(req: Request) {
   const authHeader = req.headers.get('authorization') ?? '';
   if (!authHeader.toLowerCase().startsWith('bearer ')) return null;
+  const token = authHeader.slice(7).trim();
+  if (!token) return null;
   const url = process.env.VITE_SUPABASE_URL;
   const anonKey = process.env.VITE_SUPABASE_ANON_KEY;
   if (!url || !anonKey) return null;
@@ -363,7 +365,7 @@ async function getCaller(req: Request) {
     global: { headers: { Authorization: authHeader } },
     auth: { persistSession: false, autoRefreshToken: false },
   });
-  const { data, error } = await client.auth.getUser();
+  const { data, error } = await client.auth.getUser(token);
   if (error || !data?.user) return null;
   return { client, userId: data.user.id };
 }

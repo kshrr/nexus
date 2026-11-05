@@ -1,5 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+
+const auth = vi.hoisted(() => ({ getUser: vi.fn() }));
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: () => ({ auth: { getUser: auth.getUser } }),
+}));
+
 import chat, { upstreamFailure } from '../../api/chat.ts';
+
+afterEach(() => {
+  vi.unstubAllEnvs();
+  auth.getUser.mockReset();
+});
 
 const request = (message) =>
   new Request('https://nexus.example/api/chat', {
@@ -29,6 +40,21 @@ describe('/api/chat', () => {
     const response = await chat.fetch(request('What does my result mean?'));
     expect(response.status).toBe(401);
     expect((await response.json()).error.code).toBe('UNAUTHENTICATED');
+  });
+
+  it('passes the bearer token to Supabase for validation', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://example.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'public-test-anon');
+    auth.getUser.mockResolvedValue({ data: { user: null }, error: new Error('invalid token') });
+    const response = await chat.fetch(
+      new Request('https://nexus.example/api/chat', {
+        method: 'POST',
+        headers: { Authorization: 'Bearer test.jwt.token', 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: 'Hello' }),
+      })
+    );
+    expect(auth.getUser).toHaveBeenCalledWith('test.jwt.token');
+    expect(response.status).toBe(401);
   });
 
   it('shows a friendly message when Gemini returns 429', async () => {
