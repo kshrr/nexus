@@ -23,7 +23,7 @@ const SELECT = {
   courses:
     'id, name, field_of_study, university_id, pathway_type, duration_months, entry_requirements, required_subject_codes, is_active, universities(name)',
   careers:
-    'id, name, slug, field, description, responsibilities, required_skills, useful_subjects, education_routes, riasec_profile, is_active',
+    'id, name, slug, field, description, responsibilities, required_skills, useful_subjects, education_routes, riasec_profile, reference_occupations, content_review, is_active',
 };
 
 const ORDER = { universities: 'name', courses: 'name', careers: 'name' };

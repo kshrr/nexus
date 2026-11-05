@@ -38,6 +38,9 @@ npm run db:test:rls
 
 Frontend auth/profile unit + integration tests: `npm run test` (Vitest).
 
+Signup email configuration (code and link): see
+[`docs/signup-email-verification.md`](../docs/signup-email-verification.md).
+
 Both suites exit non-zero on any failure and are safe to wire into CI.
 
 ## Deploying to a real Supabase project
@@ -54,6 +57,8 @@ that statement because PGlite has no contrib modules (UUID generation uses the
 built-in `gen_random_uuid()` either way).
 
 ## Security model (enforced in the database, not the browser)
+
+Course-source expansion uses additive migration `0020_three_university_course_sources.sql` after the original `0016` course catalogue. It registers UM, UniMAP and USIM, binds each source to its university and approved destinations, and generalises source-specific run/ingest/admin RPCs. Only the service role imports candidates; admins read status and control manual protection. Registry writes require migrations. Run `npm run db:test:courses` for original and multi-source ingestion tests. See the [activation guide](../docs/course-catalogue-sync-deployment.md) and [observed coverage](../docs/three-university-course-verification.md); UniMAP requirements remain inaccessible to automatic extraction.
 
 | Guarantee | Mechanism | Test |
 | --- | --- | --- |

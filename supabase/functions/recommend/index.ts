@@ -103,7 +103,12 @@ Deno.serve(async (req: Request) => {
 
     // ---- load the catalog ------------------------------------------------
     const [careersRes, coursesRes] = await Promise.all([
-      client.from('careers').select('id, name, slug, field, description, riasec_profile').eq('is_active', true),
+      client
+        .from('careers')
+        .select(
+          'id, name, slug, field, description, riasec_profile, reference_occupations, content_review'
+        )
+        .eq('is_active', true),
       client
         .from('courses')
         .select(
@@ -122,6 +127,8 @@ Deno.serve(async (req: Request) => {
         field: c.field,
         description: c.description,
         riasec_profile: c.riasec_profile,
+        reference_occupations: c.reference_occupations,
+        content_review: c.content_review,
       })),
       courses: (coursesRes.data ?? []).map((c) => ({
         id: c.id,
@@ -175,6 +182,7 @@ Deno.serve(async (req: Request) => {
       secondary_careers: result.secondaryCareers.map((s) => ({
         detail: s.detail,
         shared_letters: s.sharedLetters,
+        matched_reference: s.matchedReference,
       })),
       degraded_mode: result.degradedMode,
       generated_at: generatedAt,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { FUNCTIONS, invokeFunction } from '@/lib/api';
 import { useAuth } from '@/context/useAuth';
 
@@ -19,18 +19,25 @@ export function useScholarshipMatches({ scholarshipIds, enabled = true } = {}) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const latestRequest = useRef(0);
 
   const key = JSON.stringify(scholarshipIds ?? null);
 
   const load = useCallback(async () => {
+    const requestId = ++latestRequest.current;
     if (!enabled || !isAuthenticated) {
       setMatches([]);
+      setError(null);
+      setLoading(false);
       return;
     }
     setLoading(true);
     setError(null);
     const body = scholarshipIds?.length ? { scholarship_ids: scholarshipIds } : {};
     const { data, error: err } = await invokeFunction(FUNCTIONS.MATCH_SCHOLARSHIP, body);
+    // A generation-triggered refresh can overlap an older request. Only the
+    // newest response may update eligibility, errors or loading state.
+    if (requestId !== latestRequest.current) return;
     if (err) setError(err);
     else setMatches(data?.matches ?? []);
     setLoading(false);
@@ -39,6 +46,9 @@ export function useScholarshipMatches({ scholarshipIds, enabled = true } = {}) {
 
   useEffect(() => {
     load();
+    return () => {
+      latestRequest.current += 1;
+    };
   }, [load]);
 
   /** @returns {import('@/lib/api').ApiError | null} */

@@ -16,6 +16,11 @@
  */
 
 import type { Letter, Scores } from './riasec.ts';
+import {
+  getBestInterestReference,
+  type CareerEvidenceInput,
+  type ReferenceOccupation,
+} from './career-evidence.ts';
 
 export type ConditionStatus = 'satisfied' | 'unsatisfied' | 'not_evaluable';
 export type Strength = 'strong' | 'average' | 'weak';
@@ -151,7 +156,9 @@ export function evaluateCondition(cond: RuleCondition, facts: StudentFacts): Con
       );
       if (inDomain.length === 0) return 'unsatisfied';
       const matches = inDomain.filter((code) => facts.subjectStrengths[code] === wanted);
-      return yes(DOMAIN_AGGREGATION === 'all' ? matches.length === inDomain.length : matches.length > 0);
+      return yes(
+        DOMAIN_AGGREGATION === 'all' ? matches.length === inDomain.length : matches.length > 0
+      );
     }
 
     case 'education_level': {
@@ -242,13 +249,13 @@ export function evaluateRule(rule: Rule, facts: StudentFacts): EvaluatedRule {
   };
 }
 
-export interface CatalogCareer {
+export interface CatalogCareer extends CareerEvidenceInput {
   id: string;
   name: string;
   slug?: string;
   field: string;
   description?: string;
-  riasec_profile: string;
+  riasec_profile: string | null;
 }
 export interface CatalogCourse {
   id: string;
@@ -326,7 +333,11 @@ export interface EngineResult {
   careers: Recommendation[];
   courses: Recommendation[];
   /** §9.6 — careers surfaced by riasec_profile overlap, kept separate. */
-  secondaryCareers: { detail: CatalogCareer; sharedLetters: string[] }[];
+  secondaryCareers: {
+    detail: CatalogCareer;
+    sharedLetters: string[];
+    matchedReference: ReferenceOccupation;
+  }[];
   degradedMode: boolean;
   firedRules: EvaluatedRule[];
 }
@@ -384,21 +395,33 @@ export function generateRecommendations(
 
   // §9.6 secondary signal: two or more shared letters with the Holland Code.
   const ruleMatched = new Set(careers.map((c) => c.target_id));
-  const studentLetters = new Set(facts.hollandCode.split(''));
   const secondaryCareers = catalog.careers
     .filter((career) => !ruleMatched.has(career.id))
-    .map((career) => ({
-      detail: career,
-      sharedLetters: [...new Set(career.riasec_profile.split(''))].filter((l) =>
-        studentLetters.has(l)
-      ),
-    }))
-    .filter((entry) => entry.sharedLetters.length >= 2)
+    .flatMap((career) => {
+      const match = getBestInterestReference(career, facts.hollandCode);
+      return match
+        ? [
+            {
+              detail: career,
+              sharedLetters: match.sharedLetters,
+              matchedReference: match.reference,
+            },
+          ]
+        : [];
+    })
     .sort((a, b) => {
       if (b.sharedLetters.length !== a.sharedLetters.length) {
         return b.sharedLetters.length - a.sharedLetters.length;
       }
-      return a.detail.name < b.detail.name ? -1 : a.detail.name > b.detail.name ? 1 : 0;
+      return a.detail.name < b.detail.name
+        ? -1
+        : a.detail.name > b.detail.name
+          ? 1
+          : a.detail.id < b.detail.id
+            ? -1
+            : a.detail.id > b.detail.id
+              ? 1
+              : 0;
     });
 
   return { careers, courses, secondaryCareers, degradedMode, firedRules };

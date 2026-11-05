@@ -1,84 +1,51 @@
 # Nexus
 
-Scholarship and career guidance for Malaysian students, built as a final-year project.
+**Live site:** [Add Vercel URL after production deployment](https://vercel.com/)
 
-Nexus brings career exploration, course recommendations and scholarship discovery into one web application. Recommendations use explicit rules and student profile data; a separate AI chat assistant provides conversational guidance.
+Nexus is a final-year project for Malaysian students exploring courses, careers, scholarships and their interests. It is still in development; features and data may change.
 
-## Features
+## Tech stack
 
-- **Find Your Path:** RIASEC interest assessment, academic analysis and explained career and course recommendations.
-- **Scholarships:** programme browsing, eligibility matching, scholarship details and saved opportunities.
-- **Career exploration:** career and course pages with pathways and fit information.
-- **AI guidance:** a server-side Gemini integration with streaming chat and controlled profile context.
-- **Admin tools:** scholarship management, web discovery, review before publication, monitoring and audit history.
+React 18, Vite 5, Tailwind CSS 3, React Router 7, Supabase Auth and PostgreSQL, Vercel Functions, Gemini API, and a separate Python scraper. Career and course recommendations use explicit rules; Gemini powers the optional advisory chat.
 
-## Built with
+## Local setup (Windows PowerShell)
 
-React 18 · Vite · React Router · Tailwind CSS · Motion · GSAP · Supabase Auth, PostgreSQL and Edge Functions · Python · Brave Search API · Gemini
-
-## Run locally
-
-Requires Node.js 20+ and npm. Python 3.12 is recommended for the scraper.
+Install Node.js 22 and npm. The Python scraper is optional for running the website.
 
 ```powershell
 npm.cmd ci
 Copy-Item .env.example .env
-# Set your own Supabase URL and public anon key in .env.
+# Fill in VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env.
 npm.cmd run dev
 ```
 
-Open the address printed by Vite (normally http://localhost:5174).
+Vite prints the local URL (normally `http://localhost:5174`). The public pages can render without Supabase settings; sign-in, database features and chat need a configured Supabase project. `npm.cmd run build` creates the deployable `dist/` directory.
 
-To view the public landing page without backend setup, skip copying the environment file and run the dev server. Authentication and data features require your own Supabase project. This repository does not include access to the original database or user data.
+The local Vite server serves the frontend only. To test `/api/chat` locally, use `vercel dev` after linking a Vercel project and setting its local environment variables. The production Vercel deployment serves both the frontend and `/api/chat`.
 
-## Backend setup
+## Environment variable names
 
-1. Create your own Supabase project and configure email authentication.
-2. Install and sign in to the Supabase CLI, link your project, then apply the numbered migrations in [supabase/migrations](supabase/migrations) in order. Inspect the migration preview before applying changes to an existing database.
-3. Deploy the Edge Functions needed for scoring, recommendations, scholarship matching, chat and crawler dispatch. See [the function guide](supabase/functions/README.md).
-4. For admin access, register an account and run the documented `grant_admin_by_email` helper through the database administrator connection. Browser users cannot grant themselves the admin role.
+Copy `.env.example` for the names. Never put real values in Git. Set these in Vercel **Production and Preview** environments:
 
-Seed migrations provide assessment and reference data. Actual discovered scholarships depend on accessible sources and admin publication; discovery is not a guaranteed weekly quota.
-
-## Scholarship discovery
-
-Brave Search finds leads across multiple providers. The Python scraper fetches permitted public pages and stages candidates for admin review. **Add to Nexus** publishes a reviewed programme and enables monitoring. Unselected discoveries remain outside the public catalogue, and manual edits are protected from crawler updates.
-
-The [workflow example](scraper/crawler.workflow.example.yml) supports **manual runs only**. This portfolio repository has no active scraper workflow. To enable it against your own backend, copy the example into `.github/workflows/crawler.yml` and configure these Actions secrets:
-
-```powershell
-New-Item -ItemType Directory -Force .github/workflows
-Copy-Item scraper/crawler.workflow.example.yml .github/workflows/crawler.yml
-```
-
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-- `BRAVE_SEARCH_API_KEY`
-
-Admin-triggered runs also need Edge secrets `GITHUB_DISPATCH_TOKEN`, `GITHUB_REPO` and `GITHUB_WORKFLOW_REF`. Chat requires `GEMINI_API_KEY` in the Edge runtime. See [scraper setup](scraper/README.md) and [discovery deployment](docs/scholarship-discovery-deployment.md).
-
-## Validation
-
-```powershell
-npm.cmd run verify
-python -m pip install -r scraper/requirements.txt
-python -m pytest scraper/tests -q
-```
-
-Verification runs lint, frontend and shared-function tests, a production build, bundle secret checks and database tests. Database tests use PGlite; hosted PostgreSQL concurrency and live provider behaviour require separate checks.
-
-## Project structure
-
-| Directory | Purpose |
+| Name | Purpose |
 | --- | --- |
-| `src/` | Public, student and admin interfaces |
-| `supabase/migrations/` | Database schema, access policies and operations |
-| `supabase/functions/` | Scoring, recommendations, matching, chat and crawler dispatch |
-| `scraper/` | Search, extraction, monitoring and tests |
-| `docs/` | Requirements, architecture and deployment notes |
+| `VITE_SUPABASE_URL` | Public Supabase project URL; included in browser code |
+| `VITE_SUPABASE_ANON_KEY` | Public anon key; included in browser code and used by the server function with each user's JWT |
+| `GEMINI_API_KEY` | Server-side Gemini key for `/api/chat`; never use a `VITE_` prefix |
 
-## Portfolio notes
+`VITE_APP_NAME` and `VITE_APP_ENV` are optional browser settings. `GEMINI_MODEL` and `GEMINI_FALLBACK_MODEL` are optional server settings; the chat function has defaults. Do not add a Supabase service role key to Vercel for this app. Supabase Row Level Security protects user data.
 
-This is a fresh source snapshot with a new Git history. It includes no private repository history, production environment files, linked Supabase metadata or database exports. Backend deployment is separate from cloning the source.
+## Deploy to Vercel
 
-The landing photograph is credited in [image attribution](src/assets/images/README.md). No live demo URL is included until a public deployment is available.
+1. Push the `deploy/vercel` branch to the public `kshrr/nexus` repository and review its Preview deployment.
+2. In Vercel, import `kshrr/nexus` as a new project. Use the repository root as the Root Directory, Vite as the framework, `npm run build` as the Build Command, `dist` as the Output Directory, and Node.js 22.x.
+3. Add the three required environment variable names above in Project Settings → Environment Variables for Production and Preview, using your own values. Redeploy after adding or changing variables.
+4. Keep `main` as the Production Branch. Merge the reviewed deployment branch into `main` when ready to make it the live production site. Other branches receive Preview URLs.
+5. In Supabase Dashboard → Authentication → URL Configuration, set **Site URL** to the production site origin. Add exact Redirect URLs for `<production-origin>/verify` and `<production-origin>/reset-password`. For the Preview URL you intend to test, add its `/verify` and `/reset-password` URLs too. For local email flows, add `http://localhost:5174/verify` and `http://localhost:5174/reset-password`. Deploy the remaining Supabase Edge Functions and migrations separately; `/api/chat` handles Gemini on Vercel.
+6. Replace the live-site placeholder above with the production URL after checking the live deployment.
+
+`vercel.json` keeps browser routes working on refresh and routes `/api/chat` to the server function. The Python scraper is not part of the Vercel build; see [scraper setup](scraper/README.md) for its separate operation.
+
+## Live verification
+
+Check the homepage, refresh a nested page, sign in and load Supabase data, send English and Bahasa Melayu chat messages, and confirm a rate-limited response shows a friendly message. In browser developer tools, chat requests should go to `/api/chat`; the Gemini key must not appear in Network responses or built JavaScript assets.

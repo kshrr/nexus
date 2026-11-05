@@ -112,5 +112,6 @@ export const FUNCTIONS = Object.freeze({
   MATCH_SCHOLARSHIP: 'match-scholarship',
   CHAT: 'chat',
   TRIGGER_CRAWL: 'trigger-crawl',
+  TRIGGER_COURSE_CRAWL: 'trigger-course-crawl',
   DELETE_ACCOUNT: 'delete-account',
 });

@@ -14,8 +14,9 @@ import { Alert, Badge, Button, Card, EmptyState, Icon } from '@/components/ui';
 import { ErrorState, LoadingState } from '@/components/feedback';
 import { useAdminOverview, useCrawlRunning, useTriggerCrawl } from '@/hooks/useAdminOps';
 import { formatDate } from '@/lib/format';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 
-const STATUS_COLOURS = ['#2F6A55', '#B26B00', '#4B5A66', '#C4B9AC'];
+const STATUS_COLOURS = ['#24344b', '#c47b32', '#78838b', '#d7cfbe'];
 const linkButton =
   'inline-flex h-10 items-center justify-center gap-2 rounded-pill px-4 text-body-sm font-semibold transition-all duration-200 active:scale-[0.98]';
 
@@ -42,20 +43,20 @@ function MetricCard({ label, value, note, icon, tone = 'pine', href }) {
     warning: 'text-amber-600',
   };
   const content = (
-    <div className="flex h-full items-start justify-between gap-4">
+    <div className="admin-metric-content">
       <div>
-        <p className="text-caption text-ink-500">{label}</p>
-        <p className="mt-3 text-h2 font-semibold leading-none tabular-nums text-ink-900">{value}</p>
-        <p className="mt-2 text-caption text-ink-500">{note}</p>
+        <p className="admin-metric-label">{label}</p>
+        <p className="admin-metric-value">{value}</p>
+        <p className="admin-metric-note">{note}</p>
       </div>
-      <span className={`mt-0.5 shrink-0 ${toneClasses[tone]}`}>
-        <Icon name={icon} className="h-3.5 w-3.5" />
+      <span className={`admin-metric-icon ${toneClasses[tone]}`}>
+        <Icon name={icon} className="h-4 w-4" />
       </span>
     </div>
   );
 
   return (
-    <Card className="rounded-input border-ink-100 p-4 transition-colors hover:border-pine-300 md:p-4">
+    <Card className={`admin-metric-card admin-metric-${tone}`}>
       {href ? (
         <Link to={href} className="block h-full" aria-label={`${label}: ${value}`}>
           {content}
@@ -70,7 +71,7 @@ function MetricCard({ label, value, note, icon, tone = 'pine', href }) {
 function ChartTooltip({ active, payload, label, total }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="rounded-input border border-ink-100 bg-surface px-3 py-2 shadow-overlay">
+    <div className="admin-chart-tooltip rounded-input border border-ink-100 bg-surface px-3 py-2 shadow-overlay">
       <p className="mb-2 text-caption font-semibold text-ink-900">
         {payload[0]?.payload?.fullDate ?? label}
       </p>
@@ -135,21 +136,13 @@ export function AdminHome() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="border-b border-ink-100 pb-6">
-        <div className="relative flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div>
-            <div className="mb-2 text-caption text-ink-500">Administration</div>
-            <h1 className="text-h1 font-serif text-ink-900">Dashboard</h1>
-            <p className="mt-2 text-body-sm text-ink-500">
-              Scholarships, catalogue records and recent updates.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Link
-              to="/admin/scholarships"
-              className={`${linkButton} bg-pine-700 text-white hover:bg-pine-900`}
-            >
+    <div className="admin-dashboard">
+      <AdminPageHeader
+        title="Dashboard"
+        description="Scholarships, catalogue records and recent updates."
+        actions={
+          <>
+            <Link to="/admin/scholarships" className={`${linkButton} admin-banner-primary`}>
               <Icon name="plus" className="h-4 w-4" /> Add scholarship
             </Link>
             <Button
@@ -158,13 +151,13 @@ export function AdminHome() {
               loading={pending}
               disabled={Boolean(running)}
               iconLeft={<Icon name="refresh" className="h-4 w-4" />}
-              className="border-ink-300"
+              className="admin-banner-secondary"
             >
               {running ? 'Crawler running' : 'Refresh data'}
             </Button>
-          </div>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       {triggerError && <Alert variant="error">{triggerError.message}</Alert>}
       {result && !running && (
@@ -174,6 +167,7 @@ export function AdminHome() {
         <Alert
           variant="warning"
           title={`${stats.flaggedScholarships} record${stats.flaggedScholarships === 1 ? '' : 's'} need review.`}
+          className="admin-review-alert"
         >
           Check the source before publishing.{' '}
           <Link to="/admin/updates" className="font-semibold text-amber-600 underline">
@@ -182,8 +176,8 @@ export function AdminHome() {
         </Alert>
       )}
 
-      <section aria-labelledby="overview-heading">
-        <div className="mb-3 flex items-end justify-between">
+      <section className="admin-overview" aria-labelledby="overview-heading">
+        <div className="admin-section-heading">
           <div>
             <h2 id="overview-heading" className="text-h2 font-serif">
               At a glance
@@ -198,7 +192,7 @@ export function AdminHome() {
             Refresh
           </button>
         </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+        <div className="admin-metric-grid">
           <MetricCard
             label="Scholarships"
             value={totalScholarships}
@@ -256,10 +250,16 @@ export function AdminHome() {
         </div>
       </section>
 
-      <section className="grid gap-5 md:grid-cols-2" aria-label="Operational charts">
-        <Card className="min-w-0 rounded-input border-ink-100">
-          <div className="mb-5">
-            <h2 className="text-h3 font-serif">Scholarship status</h2>
+      <section className="admin-operations-board" aria-label="Operations board">
+        <Card
+          as="article"
+          className="admin-board-panel"
+          aria-labelledby="scholarship-status-heading"
+        >
+          <div className="admin-panel-heading">
+            <h2 id="scholarship-status-heading" className="text-h3 font-serif">
+              Scholarship status
+            </h2>
             <p className="mt-1 text-caption text-ink-500">
               Distribution across {totalScholarships} records
             </p>
@@ -271,7 +271,7 @@ export function AdminHome() {
             />
           ) : (
             <>
-              <div className="h-64" aria-hidden="true">
+              <div className="admin-chart-frame" aria-hidden="true">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={scholarshipData}
@@ -320,7 +320,7 @@ export function AdminHome() {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <ul className="mt-3 grid grid-cols-2 gap-2 border-t border-ink-100 pt-4 text-caption">
+              <ul className="admin-status-legend grid grid-cols-2 gap-2 border-t border-ink-100 text-caption">
                 {scholarshipData.map((item, index) => (
                   <li key={item.name} className="flex items-center justify-between gap-3">
                     <span className="flex items-center gap-2 text-ink-500">
@@ -338,10 +338,16 @@ export function AdminHome() {
           )}
         </Card>
 
-        <Card className="min-w-0 rounded-input border-ink-100">
-          <div className="mb-5 flex items-start justify-between gap-4">
+        <Card
+          as="article"
+          className="admin-board-panel"
+          aria-labelledby="crawler-performance-heading"
+        >
+          <div className="admin-panel-heading flex items-start justify-between gap-4">
             <div>
-              <h2 className="text-h3 font-serif">Crawler performance</h2>
+              <h2 id="crawler-performance-heading" className="text-h3 font-serif">
+                Crawler performance
+              </h2>
               <p className="mt-1 text-caption text-ink-500">
                 Records handled across the latest runs
               </p>
@@ -360,7 +366,7 @@ export function AdminHome() {
             />
           ) : (
             <>
-              <div className="h-64" aria-hidden="true">
+              <div className="admin-chart-frame" aria-hidden="true">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={crawlData}
@@ -448,13 +454,16 @@ export function AdminHome() {
             </>
           )}
         </Card>
-      </section>
-
-      <section className="grid gap-5 lg:grid-cols-3">
-        <Card className="overflow-hidden rounded-input border-ink-100 p-0 md:p-0 lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-ink-100 px-5 py-4 md:px-6">
+        <Card
+          as="article"
+          className="admin-board-panel admin-activity-panel"
+          aria-labelledby="recent-activity-heading"
+        >
+          <div className="admin-panel-heading flex items-center justify-between border-b border-ink-100">
             <div>
-              <h2 className="text-h3 font-serif">Recent activity</h2>
+              <h2 id="recent-activity-heading" className="text-h3 font-serif">
+                Recent activity
+              </h2>
               <p className="mt-1 text-caption text-ink-500">Latest administrator changes</p>
             </div>
             <Link
@@ -470,7 +479,12 @@ export function AdminHome() {
               description="Catalogue edits will appear here automatically."
             />
           ) : (
-            <div className="overflow-x-auto">
+            <div
+              className="admin-activity-table-wrap overflow-x-auto"
+              tabIndex={0}
+              role="region"
+              aria-label="Recent activity records"
+            >
               <table className="w-full border-collapse text-body-sm">
                 <caption className="sr-only">Recent administrator activity</caption>
                 <thead className="bg-pine-50">
@@ -487,7 +501,7 @@ export function AdminHome() {
                         <div className="flex items-center gap-3">
                           <div>
                             <p className="font-medium text-ink-900">{humanise(entry.action)}</p>
-                            <p className="max-w-xs truncate text-caption text-ink-500">
+                            <p className="text-caption text-ink-500">
                               {entry.metadata?.name ?? entry.metadata?.label ?? 'System record'}
                             </p>
                           </div>
@@ -506,66 +520,68 @@ export function AdminHome() {
             </div>
           )}
         </Card>
-
-        <Card className="rounded-input border-ink-100">
-          <div className="mb-5">
-            <h2 className="text-h3 font-serif">Quick access</h2>
-            <p className="mt-1 text-caption text-ink-500">Common management tasks</p>
-          </div>
-          <div className="space-y-2">
-            {[
-              {
-                to: '/admin/scholarships',
-                icon: 'scholarship',
-                title: 'Manage scholarships',
-                note: 'Create, edit and publish',
-              },
-              {
-                to: '/admin/courses',
-                icon: 'database',
-                title: 'Manage catalogue',
-                note: `${catalogTotal} active records`,
-              },
-              {
-                to: '/admin/updates',
-                icon: 'alert',
-                title: 'Review updates',
-                note: `${stats?.flaggedScholarships ?? 0} waiting`,
-              },
-              {
-                to: '/admin/crawler',
-                icon: 'refresh',
-                title: 'Crawler history',
-                note: 'Runs, failures and duration',
-              },
-              {
-                to: '/admin/audit',
-                icon: 'shield',
-                title: 'Audit trail',
-                note: 'Review administrator changes',
-              },
-            ].map((item) => (
-              <Link
-                key={item.to}
-                to={item.to}
-                className="group flex items-center gap-3 rounded-input border border-transparent p-3 transition-colors hover:border-pine-100 hover:bg-pine-50"
-              >
-                <span className="shrink-0 text-pine-700">
-                  <Icon name={item.icon} className="h-3.5 w-3.5" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-semibold text-ink-900">{item.title}</span>
-                  <span className="block truncate text-caption text-ink-500">{item.note}</span>
-                </span>
-                <Icon
-                  name="arrowRight"
-                  className="h-4 w-4 text-ink-300 transition-transform group-hover:translate-x-1 group-hover:text-pine-700"
-                />
-              </Link>
-            ))}
-          </div>
-        </Card>
       </section>
+
+      <Card as="nav" className="admin-quick-access" aria-labelledby="quick-access-heading">
+        <div className="admin-quick-heading">
+          <h2 id="quick-access-heading" className="text-h3 font-serif">
+            Quick access
+          </h2>
+          <p className="mt-1 text-caption text-ink-500">Common management tasks</p>
+        </div>
+        <div className="admin-quick-links">
+          {[
+            {
+              to: '/admin/scholarships',
+              icon: 'scholarship',
+              title: 'Manage scholarships',
+              note: 'Create, edit and publish',
+            },
+            {
+              to: '/admin/courses',
+              icon: 'database',
+              title: 'Manage catalogue',
+              note: `${catalogTotal} active records`,
+            },
+            {
+              to: '/admin/updates',
+              icon: 'alert',
+              title: 'Review updates',
+              note: `${stats?.flaggedScholarships ?? 0} waiting`,
+            },
+            {
+              to: '/admin/crawler',
+              icon: 'refresh',
+              title: 'Crawler history',
+              note: 'Runs, failures and duration',
+            },
+            {
+              to: '/admin/audit',
+              icon: 'shield',
+              title: 'Audit trail',
+              note: 'Review administrator changes',
+            },
+          ].map((item) => (
+            <Link
+              key={item.to}
+              to={item.to}
+              className="admin-quick-link group flex items-center gap-3"
+            >
+              <span className="shrink-0 text-pine-700">
+                <Icon name={item.icon} className="h-3.5 w-3.5" />
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block font-semibold text-ink-900">{item.title}</span>
+                <span className="block text-caption text-ink-500">{item.note}</span>
+              </span>
+              <Icon
+                name="arrowRight"
+                className="h-4 w-4 text-ink-300 transition-transform group-hover:translate-x-1 group-hover:text-pine-700"
+              />
+            </Link>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }

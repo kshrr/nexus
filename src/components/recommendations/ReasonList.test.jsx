@@ -93,7 +93,9 @@ describe('CareerCard', () => {
       </MemoryRouter>
     );
     expect(screen.getByText('Pharmacist')).toBeInTheDocument();
-    expect(screen.getByText(/Healthcare · ICR/)).toBeInTheDocument();
+    expect(screen.getByText('Healthcare')).toBeInTheDocument();
+    expect(screen.queryByText(/Healthcare · ICR/)).not.toBeInTheDocument();
+    expect(screen.queryByText('Prepares and dispenses medicines.')).not.toBeInTheDocument();
     expect(screen.getByText('R-HEALTH-01')).toBeInTheDocument();
     expect(screen.getByText('Investigative interests')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /explore career pathway/i })).toHaveAttribute(

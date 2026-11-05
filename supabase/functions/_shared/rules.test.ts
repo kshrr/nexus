@@ -5,6 +5,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import ruleBaseJson from '../recommend/rules.json';
+import { reviewedCareer } from '../../../src/test/fixtures/careerEvidence.js';
 import {
   FIRING_THRESHOLD,
   RESULTS_PER_TYPE,
@@ -168,15 +169,25 @@ describe('evaluateCondition — the six documented condition types (§9.1)', () 
   it('subject_strength matches the classification', () => {
     const f = facts();
     const base = { type: 'subject_strength', operator: 'eq', label: 'x' } as const;
-    expect(evaluateCondition({ ...base, subject: 'BIOLOGY', value: 'strong' }, f)).toBe('satisfied');
-    expect(evaluateCondition({ ...base, subject: 'BIOLOGY', value: 'weak' }, f)).toBe('unsatisfied');
+    expect(evaluateCondition({ ...base, subject: 'BIOLOGY', value: 'strong' }, f)).toBe(
+      'satisfied'
+    );
+    expect(evaluateCondition({ ...base, subject: 'BIOLOGY', value: 'weak' }, f)).toBe(
+      'unsatisfied'
+    );
   });
 
   it('subject_strength / in accepts a set of strengths', () => {
-    const f = facts({ subjectStrengths: { MATH: 'average' }, });
+    const f = facts({ subjectStrengths: { MATH: 'average' } });
     expect(
       evaluateCondition(
-        { type: 'subject_strength', operator: 'in', subject: 'MATH', value: ['strong', 'average'], label: 'x' },
+        {
+          type: 'subject_strength',
+          operator: 'in',
+          subject: 'MATH',
+          value: ['strong', 'average'],
+          label: 'x',
+        },
         f
       )
     ).toBe('satisfied');
@@ -186,7 +197,13 @@ describe('evaluateCondition — the six documented condition types (§9.1)', () 
     const f = facts({ subjectStrengths: { MATH: 'strong' } });
     expect(
       evaluateCondition(
-        { type: 'subject_strength', operator: 'eq', subject: 'PHYSICS', value: 'strong', label: 'x' },
+        {
+          type: 'subject_strength',
+          operator: 'eq',
+          subject: 'PHYSICS',
+          value: 'strong',
+          label: 'x',
+        },
         f
       )
     ).toBe('unsatisfied');
@@ -211,9 +228,9 @@ describe('evaluateCondition — the six documented condition types (§9.1)', () 
   it('interest matches career_goal or target_industry, case-insensitively', () => {
     const cond = { type: 'interest', operator: 'contains', value: 'health', label: 'x' } as const;
     expect(evaluateCondition(cond, facts())).toBe('satisfied');
-    expect(
-      evaluateCondition(cond, facts({ careerGoal: null, targetIndustry: 'HEALTHCARE' }))
-    ).toBe('satisfied');
+    expect(evaluateCondition(cond, facts({ careerGoal: null, targetIndustry: 'HEALTHCARE' }))).toBe(
+      'satisfied'
+    );
     expect(
       evaluateCondition(cond, facts({ careerGoal: 'Engineering', targetIndustry: null }))
     ).toBe('unsatisfied');
@@ -233,7 +250,12 @@ describe('evaluateCondition — the six documented condition types (§9.1)', () 
       subjectStrengths: { MATH: 'strong', BIOLOGY: 'weak' },
       subjectDomains: SUBJECT_DOMAINS,
     });
-    const base = { type: 'subject_domain_strength', operator: 'eq', value: 'strong', label: 'x' } as const;
+    const base = {
+      type: 'subject_domain_strength',
+      operator: 'eq',
+      value: 'strong',
+      label: 'x',
+    } as const;
     expect(evaluateCondition({ ...base, domain: 'mathematics' }, f)).toBe('satisfied');
     expect(evaluateCondition({ ...base, domain: 'science' }, f)).toBe('unsatisfied');
     expect(evaluateCondition({ ...base, domain: 'commerce' }, f)).toBe('unsatisfied');
@@ -284,7 +306,11 @@ describe('evaluateRule — match score §9.2', () => {
   it('fires exactly at the 50% boundary', () => {
     const r = evaluateRule(
       HEALTH_RULE,
-      facts({ subjectStrengths: { BIOLOGY: 'strong', CHEMISTRY: 'weak' }, careerGoal: null, targetIndustry: null })
+      facts({
+        subjectStrengths: { BIOLOGY: 'strong', CHEMISTRY: 'weak' },
+        careerGoal: null,
+        targetIndustry: null,
+      })
     );
     expect(r.matchScore).toBe(FIRING_THRESHOLD);
     expect(r.fired).toBe(true);
@@ -313,7 +339,13 @@ describe('degraded mode — §9.4 / AC-25', () => {
     const subjectOnly: Rule = {
       id: 'R-SUBJ-ONLY',
       conditions: [
-        { type: 'subject_strength', operator: 'eq', subject: 'MATH', value: 'strong', label: 'Strong in Mathematics' },
+        {
+          type: 'subject_strength',
+          operator: 'eq',
+          subject: 'MATH',
+          value: 'strong',
+          label: 'Strong in Mathematics',
+        },
       ],
       outputs: { careers: ['Data Scientist'] },
     };
@@ -436,6 +468,25 @@ describe('ranking, dedupe and limits — §9.3 / §9.5', () => {
 
 // ---------------------------------------------------------------------------
 describe('secondary signal — careers.riasec_profile (§9.6)', () => {
+  it('uses genuine one-letter references without padding or scores', () => {
+    const c = reviewedCareer({ code: 'S', overrides: { id: 'teacher', name: 'Teacher' } });
+    const res = generateRecommendations(
+      { version: '1', rules: [] },
+      facts({ hollandCode: 'ISA' }),
+      { careers: [c], courses: [] }
+    );
+    expect(res.secondaryCareers.map((s) => s.detail.id)).toEqual(['teacher']);
+    expect(res.secondaryCareers[0].matchedReference.interest_code).toBe('S');
+    expect(res.secondaryCareers[0]).not.toHaveProperty('match_score');
+  });
+  it('does not source-match pending legacy profiles', () => {
+    const res = generateRecommendations(
+      { version: '1', rules: [] },
+      facts({ hollandCode: 'ISA' }),
+      CATALOG
+    );
+    expect(res.secondaryCareers).toEqual([]);
+  });
   it('surfaces careers sharing two or more letters, separately from rule matches', () => {
     const { careers, secondaryCareers } = generateRecommendations(shippedRules, facts(), CATALOG);
     const ruleMatched = new Set(careers.map((c) => c.target_id));
@@ -451,8 +502,14 @@ describe('secondary signal — careers.riasec_profile (§9.6)', () => {
       careers: [
         ...CATALOG.careers,
         // no rule outputs either of these, so both reach the secondary pass
-        { id: 'c-nur', name: 'Nurse', field: 'Healthcare', riasec_profile: 'SIA' }, // shares S, I, A
-        { id: 'c-far', name: 'Farmer', field: 'Agriculture', riasec_profile: 'REC' }, // shares none
+        reviewedCareer({
+          code: 'SCI',
+          overrides: { id: 'c-nur', name: 'Nurse', field: 'Healthcare' },
+        }), // reviewed three-letter fixture shares S,I
+        reviewedCareer({
+          code: 'REC',
+          overrides: { id: 'c-far', name: 'Farmer', field: 'Agriculture' },
+        }), // shares none
       ],
     };
     const res = generateRecommendations(shippedRules, facts({ hollandCode: 'ISA' }), withExtras);
@@ -460,7 +517,7 @@ describe('secondary signal — careers.riasec_profile (§9.6)', () => {
     expect(ids).toContain('c-nur');
     expect(ids).not.toContain('c-far');
     expect(res.secondaryCareers.find((s) => s.detail.id === 'c-nur')?.sharedLetters.sort()).toEqual(
-      ['A', 'I', 'S']
+      ['I', 'S']
     );
   });
 });

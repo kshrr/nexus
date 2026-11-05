@@ -4,6 +4,7 @@ import { ErrorState, LoadingState } from '@/components/feedback';
 import { useAdminCriteria, useAdminScholarships } from '@/hooks/useAdminScholarships';
 import { EDUCATION_LEVELS, EDUCATION_LEVEL_LABELS } from '@/types';
 import { formatDate } from '@/lib/format';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 
 const STATUS_FILTERS = [
   { value: 'all', label: 'All statuses' },
@@ -76,15 +77,11 @@ export function AdminScholarships() {
 
   return (
     <>
-      <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-h1 font-serif">Scholarships</h1>
-          <p className="mt-1 text-body-sm text-ink-700">
-            Records entered here are protected from the weekly crawler automatically.
-          </p>
-        </div>
-        <Button onClick={() => setEditing('new')}>New scholarship</Button>
-      </div>
+      <AdminPageHeader
+        title="Scholarships"
+        description="Records entered here are protected from the weekly crawler automatically."
+        actions={<Button onClick={() => setEditing('new')}>New scholarship</Button>}
+      />
 
       <div className="mb-4 flex flex-wrap items-end gap-3">
         <Input

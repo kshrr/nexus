@@ -13,6 +13,7 @@ const NAV_ICONS = {
   '/find-your-path/academic': 'book',
   '/recommendations': 'sparkles',
   '/scholarships': 'scholarship',
+  '/courses': 'book',
   '/careers': 'career',
   '/saved': 'bookmark',
   '/profile': 'user',
@@ -37,7 +38,7 @@ export function SideRail() {
         </p>
         <nav className="mt-5 flex-1 space-y-5 overflow-y-auto" aria-label="Main">
           {groups.map((group) => (
-            <div key={group.name ?? 'root'}>
+            <div key={group.items[0].to}>
               {group.name && <p className="px-2 pb-1 text-caption text-ink-500">{group.name}</p>}
               <ul className="space-y-0.5">
                 {group.items.map((item) => (

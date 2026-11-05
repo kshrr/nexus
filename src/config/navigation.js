@@ -30,6 +30,7 @@ export const STUDENT_NAV = [
   { to: '/find-your-path/academic', label: 'Academic', group: 'Find your path' },
   { to: '/recommendations', label: 'Recommendations', group: 'Find your path' },
   { to: '/scholarships', label: 'Scholarships' },
+  { to: '/courses', label: 'Courses' },
   { to: '/careers', label: 'Careers' },
   { to: '/saved', label: 'Saved' },
   { to: '/profile', label: 'Profile' },

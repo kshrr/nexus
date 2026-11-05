@@ -130,8 +130,13 @@ describe('DeadlineBadge — §3.4.2 thresholds (AC-30)', () => {
   const iso = (days) => {
     const d = new Date();
     d.setDate(d.getDate() + days);
-    // Keep the instant so parsing preserves the intended local calendar day.
-    return d.toISOString();
+    // DeadlineBadge compares local calendar dates; UTC serialization can
+    // subtract a day from this fixture after midnight in Malaysia.
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, '0'),
+      String(d.getDate()).padStart(2, '0'),
+    ].join('-');
   };
 
   it('flags 7 days as critical', () => {

@@ -1,14 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { config } from '@/config/env';
-import { FUNCTIONS, normaliseError, normaliseFunctionError } from '@/lib/api';
+import { normaliseError } from '@/lib/api';
 import { useAuth } from '@/context/useAuth';
 import { filterOutput } from '@/lib/chatSafety';
 
 /**
  * Chatbot state (FR12, architecture.md §12).
  *
- * The browser never talks to Gemini. It POSTs to `fn:chat`, which holds the API
+ * The browser never talks to Gemini. It POSTs to `/api/chat`, which holds the API
  * key server-side (NFR01c / AC-34), and reads back a text/event-stream so the
  * answer appears token by token (FR-CHAT-08).
  *
@@ -88,22 +88,34 @@ export function useChat() {
         );
 
       try {
-        // Streaming needs the raw Response, so this call goes through
-        // supabase.functions.invoke with the SSE content type.
-        const { data: response, error: invokeError } = await supabase.functions.invoke(
-          FUNCTIONS.CHAT,
-          {
-            body: { message: text },
-            headers: { Accept: 'text/event-stream' },
-          }
-        );
+        const { data: sessionData } = await supabase.auth.getSession();
+        const accessToken = sessionData.session?.access_token;
+        if (!accessToken) {
+          updateReply(() => ({ message: '', streaming: false, failed: true }));
+          setError({ code: 'UNAUTHENTICATED', message: 'Sign in to use the assistant.' });
+          return;
+        }
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'text/event-stream',
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ message: text }),
+          signal: controller.signal,
+        });
 
-        if (invokeError) {
-          const normalised = await normaliseFunctionError(invokeError);
+        if (!response.ok) {
+          let normalised = { code: 'AI_UNAVAILABLE', message: MSG_UNAVAILABLE };
+          try {
+            const body = await response.json();
+            if (body?.error?.code && body?.error?.message) normalised = body.error;
+          } catch {
+            // Keep the friendly fallback if an intermediary returned non-JSON.
+          }
           updateReply(() => ({ message: '', streaming: false, failed: true }));
           setError(normalised);
-          setStreaming(false);
-          abortRef.current = null;
           return;
         }
 

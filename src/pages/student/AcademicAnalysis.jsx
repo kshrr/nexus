@@ -1,17 +1,19 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '@/components/layout';
-import { Alert, Button, Card, EmptyState } from '@/components/ui';
+import { RailPageHeader } from '@/components/journey/RailPageHeader';
+import { RailTabs } from '@/components/journey/RailTabs';
+import { RailPagination } from '@/components/journey/RailPagination';
+import { Alert, Button, EmptyState } from '@/components/ui';
 import { LoadingState } from '@/components/feedback';
 import { GradeEntryTable } from '@/components/academic/GradeEntryTable';
 import { SubjectCard } from '@/components/academic/SubjectCard';
 import { AcademicTrendChart } from '@/components/academic/AcademicTrendChart';
-import { StrengthSummary } from '@/components/academic/StrengthSummary';
+
 import { useAuth } from '@/context/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useAcademicResults } from '@/hooks/useAcademicResults';
-import { useSubjectStrengths } from '@/hooks/useSubjectStrengths';
+import { useJourneyState } from '@/components/journey/useJourneyState';
 import { GRADE_POINTS } from '@/types';
 
 /**
@@ -40,42 +42,50 @@ export function AcademicAnalysis() {
     setGrades,
     reload: reloadGrades,
   } = useAcademicResults();
-  const { strengths, loading: loadingStrengths, reload: reloadStrengths } = useSubjectStrengths();
+  const {
+    strengths,
+    loadingAcademics: loadingStrengths,
+    reloadAcademics: reloadStrengths,
+  } = useJourneyState();
+  const [active, setActive] = useState('entry');
+  const [strengthPage, setStrengthPage] = useState(1);
+  const tabsId = useId();
   const [status, setStatus] = useState('idle');
   const [error, setError] = useState(null);
 
   const isSpm = profile?.education_level === 'spm';
 
-  if (!isSpm) {
+  const heading = (
+    <RailPageHeader
+      station="02"
+      label="STRENGTH STATION"
+      title="Academic analysis"
+      description="Connect your grades, subject strengths and progress across exams."
+      actions={
+        status === 'saved' ? <span className="rail-saved-label">✓ Results saved</span> : null
+      }
+    />
+  );
+  if (!isSpm)
     return (
-      <>
-        <PageHeader
-          title="Academic analysis"
-          back={{ to: '/find-your-path', label: 'Find your path' }}
-        />
+      <div className="rail-journey-page">
+        {heading}
         <Alert variant="info" title="Results analysis is for SPM leavers only.">
-          Pre-university grading isn&rsquo;t standardised across programmes, so Nexus doesn&rsquo;t
-          analyse it. Your recommendations will use your interests and goals instead — that path is
-          fully supported, and every recommendation will say so.
+          Pre-university grading differs between programmes. Your recommendations use interests and
+          goals instead.
         </Alert>
-        <div className="mt-4">
+        <div className="rail-next-connection">
           <Button onClick={() => navigate('/recommendations')}>See recommendations</Button>
         </div>
-      </>
+      </div>
     );
-  }
-
-  if (loadingGrades || loadingStrengths) {
+  if (loadingGrades || loadingStrengths)
     return (
-      <>
-        <PageHeader
-          title="Academic analysis"
-          back={{ to: '/find-your-path', label: 'Find your path' }}
-        />
+      <div className="rail-journey-page">
+        {heading}
         <LoadingState rows={2} />
-      </>
+      </div>
     );
-  }
 
   const gradeList = selectedCodes.flatMap((code) =>
     Object.entries(grades[code] ?? {})
@@ -109,92 +119,197 @@ export function AcademicAnalysis() {
     }))
     .filter((s) => Object.keys(s.points).length > 0);
 
-  return (
-    <>
-      <PageHeader
-        title="Academic analysis"
-        description="Your grades across the three exam periods, and what they say about your strengths."
-        back={{ to: '/find-your-path', label: 'Find your path' }}
-      />
+  const tabs = [
+    { id: 'entry', label: 'Enter results' },
+    { id: 'strengths', label: 'Subject strengths' },
+    { id: 'trends', label: 'Exam trends' },
+  ];
+  const totalPages = Math.max(1, Math.ceil(strengths.length / 4));
+  const currentPage = Math.min(strengthPage, totalPages);
+  const strong = strengths.filter((s) => s.strength === 'strong');
+  const weak = strengths.filter((s) => s.strength === 'weak');
+  const domains = [...new Set(strong.map((s) => s.domain).filter(Boolean))];
 
+  return (
+    <div className="rail-journey-page rail-academic-page">
+      {heading}
+      <div className="rail-academic-summary" aria-label="Academic summary">
+        <div>
+          <span>SUBJECTS CLASSIFIED</span>
+          <strong>{strengths.length}</strong>
+        </div>
+        <div>
+          <span>STRONG SUBJECTS</span>
+          <strong>{strong.length}</strong>
+        </div>
+        <div>
+          <span>EXAM STOPS</span>
+          <strong>03</strong>
+        </div>
+      </div>
       {error && (
         <Alert variant="error" title="We couldn’t save your results" className="mb-4">
           {error.message}
         </Alert>
       )}
-
-      {/* 1. results table -------------------------------------------- */}
-      <Card
-        variant="titled"
-        title="Your results"
-        className="mb-6"
-        action={
-          status === 'saving' || saving ? (
-            <span className="text-body-sm text-ink-500">Saving…</span>
-          ) : status === 'saved' ? (
-            <span className="text-body-sm text-pine-700">Saved</span>
-          ) : null
-        }
+      <RailTabs
+        id={tabsId}
+        tabs={tabs}
+        active={active}
+        onChange={setActive}
+        label="Academic sections"
+      />
+      <section
+        className="rail-tab-panel"
+        role="tabpanel"
+        id={`${tabsId}-entry-panel`}
+        aria-labelledby={`${tabsId}-entry`}
+        hidden={active !== 'entry'}
+        tabIndex={0}
       >
-        <GradeEntryTable
-          subjects={subjects}
-          selectedCodes={selectedCodes}
-          grades={grades}
-          onAddSubject={(code) => {
-            setSelectedCodes((c) => [...c, code]);
-            setStatus('idle');
-          }}
-          onRemoveSubject={(code) => {
-            setSelectedCodes((c) => c.filter((x) => x !== code));
-            setGrades((g) => {
-              const n = { ...g };
-              delete n[code];
-              return n;
-            });
-            setStatus('idle');
-          }}
-          onGradeChange={(code, examType, grade) => {
-            setGrades((g) => ({ ...g, [code]: { ...g[code], [examType]: grade } }));
-            setStatus('idle');
-          }}
-        />
-        <Button className="mt-4 w-fit" onClick={save} disabled={saving}>
-          Save results
-        </Button>
-      </Card>
-
-      {/* 2. strength grid -------------------------------------------- */}
-      {strengths.length === 0 ? (
-        <EmptyState
-          title="No subjects classified yet"
-          description="Add the subjects you sat and the grades you have, then save. Nexus works out where you are consistently strong."
-        />
-      ) : (
-        <>
-          <h2 className="mb-3 text-h2 font-serif">Your subject strengths</h2>
-          <div className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {strengths.map((s) => (
-              <SubjectCard key={s.subjectCode} subject={s} />
-            ))}
-          </div>
-
-          {/* 3. trend chart + written summary -------------------------- */}
-          {series.length > 0 && (
-            <Card variant="titled" title="How you changed across the exams" className="mb-6">
+        <div className="rail-panel-heading">
+          <h2>Your results</h2>
+          <span>
+            {status === 'saving' || saving
+              ? 'Saving…'
+              : status === 'saved'
+                ? '✓ Saved'
+                : 'Save to update your analysis'}
+          </span>
+        </div>
+        <p className="rail-inline-note">
+          Enter the grades you have. Empty cells are allowed; switching tabs keeps your edits.
+        </p>
+        <div className="rail-grade-editor">
+          <GradeEntryTable
+            subjects={subjects}
+            selectedCodes={selectedCodes}
+            grades={grades}
+            onAddSubject={(code) => {
+              setSelectedCodes((c) => [...c, code]);
+              setStatus('idle');
+            }}
+            onRemoveSubject={(code) => {
+              setSelectedCodes((c) => c.filter((x) => x !== code));
+              setGrades((g) => {
+                const n = { ...g };
+                delete n[code];
+                return n;
+              });
+              setStatus('idle');
+            }}
+            onGradeChange={(code, examType, grade) => {
+              setGrades((g) => ({ ...g, [code]: { ...g[code], [examType]: grade } }));
+              setStatus('idle');
+            }}
+          />
+        </div>
+        <div className="rail-panel-footer">
+          <Button onClick={save} disabled={saving || status === 'saving'}>
+            Save results
+          </Button>
+          <span>Saving refreshes your subject strengths and route map.</span>
+        </div>
+      </section>
+      <section
+        className="rail-tab-panel"
+        role="tabpanel"
+        id={`${tabsId}-strengths-panel`}
+        aria-labelledby={`${tabsId}-strengths`}
+        hidden={active !== 'strengths'}
+        tabIndex={0}
+      >
+        <div className="rail-panel-heading">
+          <h2>Your subject strengths</h2>
+          <span>Based on saved grades</span>
+        </div>
+        {!strengths.length ? (
+          <EmptyState
+            title="No subjects classified yet"
+            description="Enter your grades and save to explore your strengths."
+            action={
+              <Button variant="secondary" onClick={() => setActive('entry')}>
+                Enter results
+              </Button>
+            }
+          />
+        ) : (
+          <>
+            <div className="rail-subject-grid">
+              {strengths.slice((currentPage - 1) * 4, currentPage * 4).map((s) => (
+                <SubjectCard key={s.subjectCode} subject={s} />
+              ))}
+            </div>
+            <RailPagination
+              page={currentPage}
+              pages={totalPages}
+              onChange={setStrengthPage}
+              label="Subject strength pages"
+            />
+            <ul className="rail-point-list rail-strength-notes">
+              <li>
+                {strong.length
+                  ? `Strong subjects: ${strong.map((s) => s.name).join(', ')}.`
+                  : 'No subjects have reached the Strong band yet. Your interests still offer pathways to explore.'}
+              </li>
+              {domains.length > 0 && (
+                <li>Fields associated with your strong subjects: {domains.join(', ')}.</li>
+              )}
+              {weak.length > 0 && (
+                <li>
+                  Subjects to work on: {weak.map((s) => s.name).join(', ')}. Check course entry
+                  requirements before deciding.
+                </li>
+              )}
+              <li>
+                Strong: A− and above. Average: C+ to B+. Weak: below C+. Bands use the average of
+                recorded exams.
+              </li>
+            </ul>
+          </>
+        )}
+      </section>
+      <section
+        className="rail-tab-panel"
+        role="tabpanel"
+        id={`${tabsId}-trends-panel`}
+        aria-labelledby={`${tabsId}-trends`}
+        hidden={active !== 'trends'}
+        tabIndex={0}
+      >
+        <div className="rail-panel-heading">
+          <h2>Your journey across exams</h2>
+          <span>Form 4 → SPM Trial → SPM Actual</span>
+        </div>
+        {active === 'trends' &&
+          (series.length > 0 ? (
+            <>
               <AcademicTrendChart series={series} />
-            </Card>
-          )}
-
-          <StrengthSummary strengths={strengths} />
-
-          <div className="mt-6">
-            <Button onClick={() => navigate('/recommendations')}>
-              See recommendations with these strengths
-            </Button>
-          </div>
-        </>
-      )}
-    </>
+              <p className="rail-inline-note">
+                The chart reflects the grades currently entered. Save changes to update your stored
+                analysis.
+              </p>
+            </>
+          ) : (
+            <EmptyState
+              title="No exam grades to plot yet"
+              description="Enter your available grades to see them across the three exam periods."
+              action={
+                <Button variant="secondary" onClick={() => setActive('entry')}>
+                  Enter results
+                </Button>
+              }
+            />
+          ))}
+      </section>
+      <footer className="rail-next-connection">
+        <div>
+          <span>NEXT CONNECTION</span>
+          <p>Your strengths add another perspective to your interests.</p>
+        </div>
+        <Button onClick={() => navigate('/recommendations')}>See recommendations →</Button>
+      </footer>
+    </div>
   );
 }
 
