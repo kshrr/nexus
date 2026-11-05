@@ -41,7 +41,7 @@ Copy `.env.example` for the names. Never put real values in Git. Set these in Ve
 2. In Vercel, import `kshrr/nexus` as a new project. Use the repository root as the Root Directory, Vite as the framework, `npm run build` as the Build Command, `dist` as the Output Directory, and Node.js 22.x.
 3. Add the three required environment variable names above in Project Settings → Environment Variables for Production and Preview, using your own values. Redeploy after adding or changing variables.
 4. Keep `main` as the Production Branch. Merge the reviewed deployment branch into `main` when ready to make it the live production site. Other branches receive Preview URLs.
-5. In Supabase Auth URL settings, add the production and intended preview redirect URLs for your login flow. Deploy the remaining Supabase Edge Functions and migrations separately; `/api/chat` handles Gemini on Vercel.
+5. In Supabase Dashboard → Authentication → URL Configuration, set **Site URL** to the production site origin. Add exact Redirect URLs for `<production-origin>/verify` and `<production-origin>/reset-password`. For the Preview URL you intend to test, add its `/verify` and `/reset-password` URLs too. For local email flows, add `http://localhost:5174/verify` and `http://localhost:5174/reset-password`. Deploy the remaining Supabase Edge Functions and migrations separately; `/api/chat` handles Gemini on Vercel.
 6. Replace the live-site placeholder above with the production URL after checking the live deployment.
 
 `vercel.json` keeps browser routes working on refresh and routes `/api/chat` to the server function. The Python scraper is not part of the Vercel build; see [scraper setup](scraper/README.md) for its separate operation.
