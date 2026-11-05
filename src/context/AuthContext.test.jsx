@@ -112,6 +112,20 @@ describe('AuthProvider — actions', () => {
     expect(payload.options.data.full_name).toBe('New Student');
     expect(payload.options.data.consent_version).toBe('2026-01-01');
     expect(payload.options.data.consent_at).toBeTruthy();
+    expect(payload.options.emailRedirectTo).toBe(`${window.location.origin}/verify`);
+  });
+
+  it('keeps the website confirmation destination when resending a signup email', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => {
+      await result.current.resendOtp('new@test.nexus');
+    });
+    expect(h.auth.resend).toHaveBeenCalledWith({
+      type: 'signup',
+      email: 'new@test.nexus',
+      options: { emailRedirectTo: `${window.location.origin}/verify` },
+    });
   });
 
   it('signOut clears the cached profile', async () => {

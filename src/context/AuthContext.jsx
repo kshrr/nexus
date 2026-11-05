@@ -101,6 +101,7 @@ export function AuthProvider({ children }) {
       email,
       password,
       options: {
+        emailRedirectTo: `${window.location.origin}/verify`,
         data: {
           full_name: fullName,
           consent_version: consentVersion,
@@ -117,7 +118,11 @@ export function AuthProvider({ children }) {
   }, []);
 
   const resendOtp = useCallback(async (email) => {
-    const { error } = await supabase.auth.resend({ type: 'signup', email });
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: `${window.location.origin}/verify` },
+    });
     return { error: error ? normaliseError(error) : null };
   }, []);
 

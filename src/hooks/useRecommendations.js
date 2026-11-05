@@ -56,7 +56,9 @@ export function useRecommendations() {
         careerIds.length
           ? supabase
               .from('careers')
-              .select('id, name, slug, field, description, riasec_profile')
+              .select(
+                'id, name, slug, field, description, riasec_profile, reference_occupations, content_review'
+              )
               .in('id', careerIds)
           : Promise.resolve({ data: [], error: null }),
         courseIds.length

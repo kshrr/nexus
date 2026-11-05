@@ -58,6 +58,7 @@ export function useRiasecResult() {
       return;
     }
     setLoading(true);
+    setError(null);
     try {
       const { data, error: err } = await supabase
         .from('riasec_results')
