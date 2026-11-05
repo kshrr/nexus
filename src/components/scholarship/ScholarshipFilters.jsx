@@ -31,7 +31,7 @@ export function ScholarshipFilters({ facets, value, onChange, onClear }) {
   };
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="scholarship-filters flex flex-col gap-5">
       <div className="flex items-baseline justify-between">
         <h2 className="text-h4 font-sans">Filters</h2>
         {activeCount > 0 && (
@@ -80,7 +80,7 @@ function FilterGroup({ legend, options, selected, onToggle }) {
   return (
     <fieldset>
       <legend className="mb-2 text-caption font-medium text-ink-700">{legend}</legend>
-      <div className="flex flex-col gap-1.5">
+      <div className="scholarship-filter-options flex flex-col gap-1.5">
         {options.map((opt) => {
           const inputId = `${id}-${opt.value}`;
           return (
@@ -90,7 +90,7 @@ function FilterGroup({ legend, options, selected, onToggle }) {
                 type="checkbox"
                 checked={selected.includes(opt.value)}
                 onChange={() => onToggle(opt.value)}
-                className="h-4 w-4 accent-pine-700"
+                className="scholarship-filter-checkbox h-4 w-4"
               />
               <label htmlFor={inputId} className="text-body-sm text-ink-900">
                 {opt.label}

@@ -1,0 +1,268 @@
+/* One shared header/footer treatment for public, student and admin layouts. */
+header.nexus-public-header {
+  --landing-ink: #24344b;
+  --landing-green: #c7503f;
+  --landing-muted: #647278;
+  --landing-line: #dedbcf;
+  background: #fffaf0;
+  border-bottom: 1px solid #dedbcf;
+  box-shadow: 0 4px 18px rgb(36 52 75 / 12%);
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  color: #24344b;
+  z-index: 40;
+}
+header.nexus-public-header.is-scrolled {
+  box-shadow: 0 5px 22px rgb(36 52 75 / 15%);
+}
+header.nexus-public-header .public-header-inner,
+header.nexus-public-header.is-scrolled .public-header-inner {
+  min-height: 84px;
+  grid-template-columns: auto 1fr auto;
+  gap: 24px;
+}
+header.nexus-public-header .public-primary-nav {
+  justify-content: center;
+  gap: 26px;
+}
+header.nexus-public-header .public-header-actions {
+  gap: 16px;
+}
+header.nexus-public-header .public-wordmark {
+  color: #24344b;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: 25px;
+  font-weight: 700;
+  gap: 10px;
+  letter-spacing: -0.8px;
+}
+header.nexus-public-header .public-wordmark > span:first-child {
+  background: #c7503f;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 19px;
+}
+header.nexus-public-header .landing-button {
+  background: #24344b;
+  color: #fffaf0;
+  border-radius: 4px;
+  min-height: 44px;
+  padding: 11px 18px;
+  gap: 10px;
+  font-size: 12px;
+}
+header.nexus-public-header .landing-button:hover {
+  background: #c7503f;
+}
+header.nexus-public-header .public-search-links {
+  background: #fffaf0;
+  max-height: min(480px, calc(100dvh - 150px));
+  overflow-y: auto;
+}
+header.nexus-public-header .public-search-links a:hover {
+  background: #f0ebdd;
+}
+header.nexus-public-header .site-header-signout {
+  color: #59686e;
+  font-size: 12px;
+  min-height: 44px;
+}
+header.nexus-public-header .site-header-signout:hover {
+  color: #c7503f;
+}
+header.nexus-public-header :focus-visible {
+  outline: 3px solid #c7503f;
+  outline-offset: 3px;
+}
+/* Student account controls follow one order at every width: saved, profile, exit. */
+header.nexus-public-header.has-student-actions .public-header-actions {
+  gap: 4px;
+}
+header.nexus-public-header .site-account-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 4px;
+  color: #24344b;
+  background: transparent;
+  padding: 0;
+  transition:
+    background 160ms ease,
+    color 160ms ease;
+}
+header.nexus-public-header .site-account-icon:hover,
+header.nexus-public-header .site-account-icon[aria-current='page'] {
+  background: #eee8da;
+  color: #a73f32;
+}
+header.nexus-public-header .site-account-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+footer.nexus-public-footer {
+  --landing-ink: #fffaf0;
+  --landing-green: #f0b7a5;
+  --landing-muted: #c2cbd3;
+  --landing-line: #4a586b;
+  background: #24344b;
+  color: #fffaf0;
+  border-top: 1px solid #35465c;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+}
+footer.nexus-public-footer .public-wordmark {
+  color: #fffaf0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: 25px;
+  font-weight: 700;
+  gap: 10px;
+  letter-spacing: -0.8px;
+}
+footer.nexus-public-footer .public-wordmark > span:first-child {
+  background: #c7503f;
+  color: #fffaf0;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 19px;
+}
+footer.nexus-public-footer .public-footer-main p,
+footer.nexus-public-footer .public-footer-bottom {
+  color: #c2cbd3;
+}
+footer.nexus-public-footer .public-footer-bottom {
+  border-color: #4a586b;
+}
+footer.nexus-public-footer .public-footer-links a {
+  color: #fffaf0;
+}
+footer.nexus-public-footer .public-footer-links a:hover,
+footer.nexus-public-footer .public-footer-bottom a:hover {
+  color: #f0b7a5;
+}
+footer.nexus-public-footer :focus-visible {
+  outline: 3px solid #f0b7a5;
+  outline-offset: 4px;
+}
+
+.site-shell-body {
+  min-width: 0;
+}
+/* Include tablets in the compact header so account menus never crowd the links. */
+@media (max-width: 1023px) {
+  header.nexus-public-header.has-student-actions .public-header-inner,
+  header.nexus-public-header.has-student-actions.is-scrolled .public-header-inner {
+    grid-template-columns: minmax(0, 1fr) 44px auto;
+    gap: 8px;
+  }
+  header.nexus-public-header.has-student-actions .public-header-actions {
+    display: flex;
+    grid-column: 3;
+    grid-row: 1;
+  }
+  header.nexus-public-header.has-student-actions .public-nav-toggle {
+    grid-column: 2;
+    grid-row: 1;
+  }
+  header.nexus-public-header .public-header-inner,
+  header.nexus-public-header.is-scrolled .public-header-inner {
+    min-height: 70px;
+    grid-template-columns: 1fr auto;
+  }
+  header.nexus-public-header .public-header-actions {
+    display: none;
+  }
+  header.nexus-public-header .public-nav-toggle {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    color: #24344b;
+    border-radius: 4px;
+  }
+  header.nexus-public-header .public-primary-nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    max-height: calc(100dvh - 70px);
+    overflow-y: auto;
+    background: #fffaf0;
+    padding: 16px 20px 24px;
+    border-bottom: 1px solid #dedbcf;
+    box-shadow: 0 12px 24px #24344b0a;
+  }
+  header.nexus-public-header .public-primary-nav.is-open {
+    display: block;
+  }
+  header.nexus-public-header .public-nav-link,
+  header.nexus-public-header .public-search summary {
+    width: 100%;
+    min-height: 48px;
+  }
+  header.nexus-public-header .public-search summary {
+    justify-content: space-between;
+  }
+  header.nexus-public-header .public-search-links {
+    position: static;
+    width: 100%;
+    max-height: none;
+    padding: 0 0 8px 8px;
+    border: 0;
+    box-shadow: none;
+  }
+  header.nexus-public-header .public-mobile-auth {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 16px;
+    border-top: 1px solid #dedbcf;
+  }
+}
+@media (max-width: 479px) {
+  header.nexus-public-header.has-student-actions .public-wordmark {
+    width: 30px;
+    gap: 0;
+  }
+  /* Keep the full brand name for screen readers while using the monogram. */
+  header.nexus-public-header.has-student-actions .public-wordmark > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+}
+@media (max-width: 767px) {
+  header.nexus-public-header .public-header-inner,
+  header.nexus-public-header.is-scrolled .public-header-inner {
+    min-height: 70px;
+    grid-template-columns: 1fr auto;
+  }
+  header.nexus-public-header .public-wordmark {
+    font-size: 23px;
+  }
+  header.nexus-public-header .public-primary-nav {
+    background: #fffaf0;
+    align-items: stretch;
+    gap: 8px;
+  }
+  header.nexus-public-header .public-mobile-auth {
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  header.nexus-public-header .public-nav-toggle:hover {
+    background: #eee8da;
+  }
+  .site-app-shell > footer.nexus-public-footer {
+    padding-bottom: calc(70px + env(safe-area-inset-bottom));
+  }
+}

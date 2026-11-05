@@ -1,0 +1,465 @@
+/* Admin station interiors only: leave the shared navbar and student pages alone. */
+.rail-admin-shell {
+  background: #f5f2e8;
+}
+.rail-admin-shell #main {
+  color: #24344b;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  padding-block: 22px;
+}
+.rail-admin-shell #main h1,
+.rail-admin-shell #main h2,
+.rail-admin-shell #main h3 {
+  font-family: inherit;
+  overflow-wrap: anywhere;
+}
+.rail-admin-shell #main :focus-visible {
+  outline: 3px solid #a73f32;
+  outline-offset: 3px;
+}
+.rail-admin-shell #main .bg-surface {
+  background-color: #fffaf0;
+}
+.rail-admin-shell #main .bg-pine-50 {
+  background-color: #eeeade;
+}
+.rail-admin-shell #main .text-pine-700 {
+  color: #24344b;
+}
+.rail-admin-shell #main .bg-pine-700 {
+  background-color: #24344b;
+}
+.rail-admin-shell #main .bg-pine-700:hover:not(:disabled) {
+  background-color: #354a65;
+}
+.rail-admin-shell #main table {
+  border-color: #dcd9cb;
+}
+.rail-admin-shell #main button,
+.rail-admin-shell #main input,
+.rail-admin-shell #main select {
+  min-height: 44px;
+}
+.rail-admin-shell #main .admin-page-banner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+  margin-bottom: 20px;
+  padding: 22px 28px 25px;
+  background: #24344b;
+  color: #fffaf0;
+  border-radius: 5px;
+  border-bottom: 4px solid #e5a14b;
+}
+.rail-admin-shell #main .admin-banner-copy {
+  min-width: 0;
+  flex: 1 1 340px;
+}
+.rail-admin-shell #main .admin-banner-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #e5a14b;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.7px;
+  margin-bottom: 8px;
+}
+.rail-admin-shell #main .admin-banner-eyebrow > span {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid #e5a14b;
+  border-radius: 50%;
+  letter-spacing: 0;
+}
+.rail-admin-shell #main .admin-page-banner h1 {
+  font-size: clamp(27px, 2.6vw, 36px);
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -1px;
+  color: #fffaf0;
+}
+.rail-admin-shell #main .admin-banner-description {
+  max-width: 720px;
+  margin-top: 7px;
+  color: #d8dfe4;
+  font-size: 13px;
+  line-height: 1.6;
+}
+.rail-admin-shell #main .admin-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+.rail-admin-shell #main .admin-banner-actions > button,
+.rail-admin-shell #main .admin-banner-actions > a {
+  min-height: 44px;
+  height: auto;
+  padding: 10px 16px;
+  border-radius: 4px;
+  box-shadow: none;
+  font-size: 12px;
+}
+.rail-admin-shell #main .admin-banner-actions .bg-pine-700,
+.rail-admin-shell #main .admin-banner-primary {
+  color: #24344b;
+  background: #fffaf0;
+  border: 1px solid #fffaf0;
+}
+.rail-admin-shell #main .admin-banner-actions .bg-pine-700:hover:not(:disabled),
+.rail-admin-shell #main .admin-banner-primary:hover {
+  background: #f0ddbb;
+}
+.rail-admin-shell #main .admin-banner-secondary {
+  color: #fffaf0;
+  background: transparent;
+  border: 1px solid #8593a2;
+}
+.rail-admin-shell #main .admin-banner-secondary:hover:not(:disabled) {
+  background: #354a65;
+}
+.rail-admin-shell #main .admin-banner-track {
+  position: absolute;
+  bottom: 9px;
+  right: 28px;
+  width: 145px;
+  height: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.rail-admin-shell #main .admin-banner-track::before {
+  content: '';
+  position: absolute;
+  inset: 3px 0 auto;
+  height: 2px;
+  background: #e5a14b;
+}
+.rail-admin-shell #main .admin-banner-track span {
+  position: relative;
+  width: 8px;
+  height: 8px;
+  background: #24344b;
+  border: 2px solid #e5a14b;
+  border-radius: 50%;
+}
+.rail-admin-shell #main .admin-dashboard {
+  display: grid;
+  gap: 16px;
+}
+.rail-admin-shell #main .admin-dashboard .admin-page-banner {
+  margin-bottom: 0;
+}
+.rail-admin-shell #main .admin-review-alert {
+  padding: 10px 14px;
+  border-radius: 4px;
+  background: #f5e7ce;
+  border-color: #c47b32;
+}
+.rail-admin-shell #main .admin-review-alert > p {
+  font-size: 13px;
+}
+.rail-admin-shell #main .admin-review-alert > div {
+  margin-top: 3px;
+  font-size: 12px;
+}
+.rail-admin-shell #main .admin-review-alert a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #904311;
+}
+.rail-admin-shell #main .admin-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+.rail-admin-shell #main .admin-section-heading h2 {
+  font-size: 17px;
+  font-weight: 600;
+}
+.rail-admin-shell #main .admin-section-heading p {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #59686e;
+}
+.rail-admin-shell #main .admin-section-heading button {
+  padding-inline: 10px;
+  font-size: 12px;
+}
+.rail-admin-shell #main .admin-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 10px;
+}
+.rail-admin-shell #main .admin-metric-card {
+  position: relative;
+  min-width: 0;
+  padding: 14px;
+  border-radius: 4px;
+  border: 1px solid #dcd9cb;
+  border-top: 3px solid #66778c;
+  background: #fffaf0;
+  box-shadow: 0 2px 0 #e8e4d8;
+}
+.rail-admin-shell #main .admin-metric-card:hover {
+  border-color: #8593a2;
+}
+.rail-admin-shell #main .admin-metric-card.admin-metric-warning {
+  border-top-color: #c47b32;
+}
+.rail-admin-shell #main .admin-metric-card.admin-metric-sky {
+  border-top-color: #6d919e;
+}
+.rail-admin-shell #main .admin-metric-card.admin-metric-lilac {
+  border-top-color: #8a7994;
+}
+.rail-admin-shell #main .admin-metric-card.admin-metric-cream {
+  border-top-color: #b99864;
+}
+.rail-admin-shell #main .admin-metric-content {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.rail-admin-shell #main .admin-metric-content > div {
+  min-width: 0;
+}
+.rail-admin-shell #main .admin-metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #59686e;
+  min-height: 30px;
+  overflow-wrap: anywhere;
+}
+.rail-admin-shell #main .admin-metric-value {
+  margin-top: 5px;
+  font-size: clamp(22px, 2.2vw, 30px);
+  line-height: 1.1;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: #24344b;
+  overflow-wrap: anywhere;
+}
+.rail-admin-shell #main .admin-metric-note {
+  font-size: 10px;
+  margin-top: 9px;
+  padding-top: 8px;
+  border-top: 1px dashed #dcd9cb;
+  color: #59686e;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.rail-admin-shell #main .admin-metric-icon {
+  color: #596b83;
+  flex-shrink: 0;
+  padding-top: 1px;
+}
+.rail-admin-shell #main .admin-metric-warning .admin-metric-icon {
+  color: #a65a1c;
+}
+.rail-admin-shell #main .admin-operations-board {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(0, 1.2fr);
+  align-items: start;
+  gap: 12px;
+}
+.rail-admin-shell #main .admin-board-panel {
+  min-width: 0;
+  height: 100%;
+  padding: 16px;
+  border-radius: 4px;
+  border: 1px solid #dcd9cb;
+  background: #fffaf0;
+  box-shadow: 0 2px 0 #e8e4d8;
+}
+.rail-admin-shell #main .admin-panel-heading {
+  margin-bottom: 10px;
+}
+.rail-admin-shell #main .admin-panel-heading h2 {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.rail-admin-shell #main .admin-panel-heading p {
+  color: #59686e;
+  font-size: 11px;
+  line-height: 1.6;
+}
+.rail-admin-shell #main .admin-panel-heading a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 11px;
+}
+.rail-admin-shell #main .admin-chart-frame {
+  height: 180px;
+  min-width: 0;
+}
+.rail-admin-shell #main .admin-chart-tooltip {
+  background: #fffaf0;
+  border-color: #dcd9cb;
+}
+.rail-admin-shell #main .admin-status-legend {
+  margin-top: 8px;
+  padding-top: 10px;
+  font-size: 11px;
+}
+.rail-admin-shell #main .admin-board-panel button {
+  font-size: 11px;
+}
+.rail-admin-shell #main .admin-activity-panel {
+  padding: 0;
+}
+.rail-admin-shell #main .admin-activity-panel .admin-panel-heading {
+  padding: 12px 16px;
+  margin: 0;
+}
+.rail-admin-shell #main .admin-activity-table-wrap {
+  max-height: 248px;
+  scrollbar-width: thin;
+  scrollbar-color: #8593a2 #eeeade;
+  overflow: auto;
+}
+.rail-admin-shell #main .admin-activity-panel table {
+  font-size: 11px;
+  line-height: 1.6;
+}
+.rail-admin-shell #main .admin-activity-panel th,
+.rail-admin-shell #main .admin-activity-panel td {
+  padding: 10px;
+}
+.rail-admin-shell #main .admin-activity-panel th {
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+.rail-admin-shell #main .admin-activity-panel td p {
+  overflow-wrap: anywhere;
+}
+.rail-admin-shell #main .admin-activity-panel td p + p {
+  font-size: 10px;
+}
+.rail-admin-shell #main .admin-activity-panel td:last-child {
+  white-space: normal;
+  font-size: 10px;
+}
+.rail-admin-shell #main .admin-quick-access {
+  display: grid;
+  grid-template-columns: 120px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid #dcd9cb;
+  border-left: 4px solid #c47b32;
+  border-radius: 4px;
+  background: #eeeade;
+}
+.rail-admin-shell #main .admin-quick-heading h2 {
+  font-size: 15px;
+  font-weight: 600;
+}
+.rail-admin-shell #main .admin-quick-heading p {
+  color: #59686e;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.rail-admin-shell #main .admin-quick-links {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+.rail-admin-shell #main .admin-quick-link {
+  min-width: 0;
+  min-height: 66px;
+  padding: 9px 10px;
+  border: 1px solid #dcd9cb;
+  border-radius: 3px;
+  background: #fffaf0;
+  gap: 7px;
+}
+.rail-admin-shell #main .admin-quick-link:hover {
+  background: #f3e8d5;
+  border-color: #b99864;
+}
+.rail-admin-shell #main .admin-quick-link > span:nth-child(2) > span:first-child {
+  font-size: 11px;
+  line-height: 1.4;
+}
+.rail-admin-shell #main .admin-quick-link > span:nth-child(2) > span:last-child {
+  font-size: 10px;
+  line-height: 1.5;
+  margin-top: 3px;
+  color: #59686e;
+}
+.rail-admin-shell #main .admin-quick-link span {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 1199px) {
+  .rail-admin-shell #main .admin-metric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .rail-admin-shell #main .admin-operations-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rail-admin-shell #main .admin-activity-panel {
+    grid-column: 1 / -1;
+  }
+  .rail-admin-shell #main .admin-quick-access {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (max-width: 767px) {
+  .rail-admin-shell #main {
+    padding-block: 16px;
+  }
+  .rail-admin-shell #main .admin-page-banner {
+    padding: 20px 18px 24px;
+    gap: 16px;
+  }
+  .rail-admin-shell #main .admin-banner-copy {
+    flex-basis: 100%;
+  }
+  .rail-admin-shell #main .admin-banner-actions {
+    width: 100%;
+  }
+  .rail-admin-shell #main .admin-banner-track {
+    right: 18px;
+  }
+  .rail-admin-shell #main .admin-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .rail-admin-shell #main .admin-operations-board {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .rail-admin-shell #main .admin-activity-table-wrap {
+    max-height: none;
+  }
+  .rail-admin-shell #main .admin-chart-frame {
+    height: 210px;
+  }
+  .rail-admin-shell #main .admin-quick-links {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 359px) {
+  .rail-admin-shell #main .admin-metric-grid,
+  .rail-admin-shell #main .admin-quick-links {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rail-admin-shell #main .admin-dashboard *,
+  .rail-admin-shell #main .admin-banner-actions * {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,392 @@
+.railway-entrance {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  background: #f8f5ea;
+  color: #24344b;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  overflow-y: auto;
+}
+.railway-welcome-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 36px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+}
+.railway-welcome-mark {
+  display: grid;
+  place-items: center;
+  height: 30px;
+  width: 30px;
+  background: #c7503f;
+  color: #fff9ec;
+  border-radius: 50%;
+  font-size: 17px;
+  letter-spacing: 0;
+}
+.railway-welcome-header button {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px solid #dcdace;
+  border-radius: 3px;
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+.railway-welcome-header button span {
+  margin-left: 12px;
+}
+.railway-welcome-header button:hover {
+  background: #eee9dc;
+}
+.railway-welcome-header button:focus-visible {
+  outline: 2px solid #c7503f;
+  outline-offset: 4px;
+}
+.railway-welcome-content {
+  flex: 1;
+  width: min(760px, calc(100% - 40px));
+  margin: auto;
+  padding: 28px 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.railway-welcome-eyebrow {
+  color: #c7503f;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-align: center;
+}
+.railway-welcome-content h2 {
+  margin: 15px 0 25px;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  font-size: clamp(32px, 5vw, 52px);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -1.8px;
+  text-align: center;
+}
+.railway-welcome-content h2 em {
+  font-family: Georgia, serif;
+  color: #c7503f;
+  font-weight: 400;
+}
+.railway-gate-scene {
+  width: 100%;
+  height: min(310px, 36svh);
+  min-height: 220px;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.railway-signal {
+  position: absolute;
+  left: 12%;
+  bottom: 32px;
+  width: 68px;
+  height: 233px;
+  z-index: 4;
+}
+.railway-signal-head {
+  position: absolute;
+  top: 0;
+  left: 11px;
+  width: 46px;
+  padding: 11px 8px;
+  display: grid;
+  gap: 10px;
+  border-radius: 24px;
+  background: #293b4d;
+  border: 2px solid #1b2d3d;
+  box-shadow: inset -5px 0 #1b2d3d;
+}
+.railway-signal-lamp {
+  width: 26px;
+  height: 26px;
+  border: 3px solid #162b3b;
+  background: #52616a;
+  border-radius: 50%;
+}
+.signal-red {
+  background: #b1473a;
+}
+.signal-amber {
+  background: #8f793f;
+}
+.signal-green {
+  background: #496d58;
+}
+.is-red .signal-red {
+  background: #f16b51;
+  box-shadow: 0 0 18px #e55c4855;
+}
+.is-amber .signal-amber {
+  background: #f0c45c;
+  box-shadow: 0 0 18px #eab74b55;
+}
+.is-green .signal-green {
+  background: #79b389;
+  box-shadow: 0 0 18px #79b38955;
+}
+.railway-signal-post {
+  position: absolute;
+  top: 111px;
+  bottom: 0;
+  left: 30px;
+  width: 8px;
+  background: #6d8381;
+  z-index: -1;
+}
+.railway-signal-plate {
+  position: absolute;
+  left: 5px;
+  bottom: 28px;
+  width: 61px;
+  background: #fff9ec;
+  border: 1px solid #8d9d96;
+  padding: 4px;
+  color: #4f686b;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-align: center;
+}
+.railway-welcome-train {
+  position: absolute;
+  width: 77%;
+  bottom: 42px;
+  left: -2%;
+  z-index: 1;
+  animation: nexus-gate-train 2.95s cubic-bezier(0.45, 0, 0.35, 1) both;
+}
+.railway-welcome-train svg {
+  display: block;
+  width: 100%;
+}
+.railway-gate-track {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  height: 22px;
+  bottom: 31px;
+  background: repeating-linear-gradient(90deg, transparent 0 17px, #b5b4a6 17px 22px);
+  border-top: 3px solid #81908f;
+  border-bottom: 3px solid #81908f;
+  z-index: 0;
+}
+.railway-gate {
+  position: absolute;
+  left: 38%;
+  width: 65px;
+  height: 104px;
+  bottom: 20px;
+  z-index: 3;
+}
+.railway-gate-base {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 51px;
+  height: 82px;
+  background: #4c6d79;
+  border: 2px solid #293b4d;
+  border-radius: 4px 4px 0 0;
+  box-shadow: inset -9px 0 #365765;
+}
+.railway-gate-base span {
+  position: absolute;
+  left: 9px;
+  top: 30px;
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  border-radius: 50%;
+  background: #f8f5ea;
+  color: #c7503f;
+  font-size: 14px;
+  font-weight: 700;
+}
+.railway-gate-base i {
+  position: absolute;
+  bottom: 10px;
+  left: 12px;
+  width: 17px;
+  height: 2px;
+  background: #a1b7b6;
+  box-shadow: 0 4px #a1b7b6;
+}
+.railway-gate-arm {
+  position: absolute;
+  top: 9px;
+  left: 22px;
+  width: min(220px, 37vw);
+  height: 15px;
+  transform-origin: 6px 50%;
+  border-radius: 4px;
+  background: repeating-linear-gradient(115deg, #c95846 0 27px, #fff9ec 27px 53px);
+  border: 2px solid #293b4d;
+  box-shadow: 0 3px #24344b15;
+  animation: nexus-gate-lift 3.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.railway-gate-arm span {
+  position: absolute;
+  inset: 3px 4px;
+  border-top: 1px solid #ffffff50;
+}
+.railway-gate-hinge {
+  position: absolute;
+  left: 16px;
+  top: 5px;
+  width: 22px;
+  height: 22px;
+  background: #d9e1d8;
+  border: 5px solid #293b4d;
+  border-radius: 50%;
+}
+.railway-track-direction {
+  position: absolute;
+  left: 52%;
+  bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #7b8887;
+}
+.railway-signal-caption {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 73px;
+  margin-top: 18px;
+  text-align: center;
+}
+.railway-signal-state {
+  color: #c7503f;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 1.8px;
+}
+.railway-signal-state.is-amber {
+  color: #87651c;
+}
+.railway-signal-state.is-green {
+  color: #37694d;
+}
+.railway-signal-caption p {
+  font-size: 13px;
+  color: #627275;
+}
+.railway-welcome-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 21px 36px;
+  border-top: 1px solid #dcdace;
+  color: #627275;
+  font-size: 9px;
+  letter-spacing: 1.5px;
+}
+@keyframes nexus-gate-lift {
+  0%,
+  38% {
+    transform: rotate(0deg);
+  }
+  57%,
+  100% {
+    transform: rotate(-83deg);
+  }
+}
+@keyframes nexus-gate-train {
+  0%,
+  54% {
+    transform: translateX(-110%);
+  }
+  86% {
+    transform: translateX(39%);
+  }
+  100% {
+    transform: translateX(170%);
+  }
+}
+@media (max-width: 600px) {
+  .railway-welcome-header {
+    padding: 19px 20px;
+    font-size: 10px;
+    gap: 9px;
+  }
+  .railway-welcome-header button {
+    padding: 9px 11px;
+    font-size: 11px;
+  }
+  .railway-welcome-header button span {
+    margin-left: 7px;
+  }
+  .railway-welcome-content {
+    padding: 18px 0;
+  }
+  .railway-welcome-eyebrow {
+    font-size: 8px;
+    letter-spacing: 1.3px;
+  }
+  .railway-welcome-content h2 {
+    font-size: 34px;
+    margin: 14px 0 20px;
+  }
+  .railway-gate-scene {
+    min-height: 232px;
+  }
+  .railway-signal {
+    left: 5%;
+    transform: scale(0.8);
+    transform-origin: bottom left;
+  }
+  .railway-gate {
+    left: 29%;
+    transform: scale(0.85);
+    transform-origin: bottom left;
+  }
+  .railway-gate-arm {
+    width: 170px;
+  }
+  .railway-welcome-train {
+    width: 130%;
+    left: -15%;
+    bottom: 42px;
+  }
+  .railway-signal-caption p {
+    font-size: 12px;
+  }
+  .railway-welcome-footer {
+    padding: 20px;
+    font-size: 8px;
+  }
+  .railway-welcome-footer span:last-child {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .railway-gate-arm {
+    animation: none;
+    transform: rotate(-83deg);
+  }
+  .railway-welcome-train {
+    animation: none;
+    transform: translateX(0);
+  }
+}

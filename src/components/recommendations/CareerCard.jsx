@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Badge, Card, Icon } from '@/components/ui';
 import { ReasonList } from './ReasonList';
 import { MatchScore } from './MatchScore';
+import { getSectionReview, normaliseCareerEvidence } from '@/lib/careerEvidence';
 
 /**
  * A recommended career (FR07, ui-spec §3.9). Carries the match score, the
@@ -17,19 +18,22 @@ export function CareerCard({ recommendation }) {
   if (!detail) return null;
 
   return (
-    <Card as="article" variant="elevated" className="flex flex-col gap-3 transition-transform duration-200 hover:-translate-y-1">
+    <Card
+      as="article"
+      variant="elevated"
+      className="flex flex-col gap-3 transition-transform duration-200 hover:-translate-y-1"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-h3 font-sans text-ink-900">{detail.name}</h3>
-          <p className="mt-0.5 text-body-sm text-ink-500">
-            {detail.field}
-            {detail.riasec_profile ? ` · ${detail.riasec_profile}` : ''}
-          </p>
+          <p className="mt-0.5 text-body-sm text-ink-500">{detail.field}</p>
         </div>
         <MatchScore score={score} />
       </div>
 
-      {detail.description && <p className="text-body-sm text-ink-700">{detail.description}</p>}
+      {detail.description && getSectionReview(detail, 'overview') && (
+        <p className="text-body-sm text-ink-700">{detail.description}</p>
+      )}
 
       <ReasonList reasons={reasons} />
 
@@ -53,21 +57,32 @@ export function CareerCard({ recommendation }) {
  */
 export function SecondaryCareerCard({ entry }) {
   const { detail, shared_letters: shared } = entry;
+  const reference = normaliseCareerEvidence(detail).references.find(
+    (ref) => ref.reference_id === entry.matched_reference?.reference_id
+  );
+  if (!reference) return null;
   return (
-    <Card as="article" variant="elevated" className="flex flex-col gap-2 transition-transform duration-200 hover:-translate-y-1">
+    <Card
+      as="article"
+      variant="elevated"
+      className="flex flex-col gap-2 transition-transform duration-200 hover:-translate-y-1"
+    >
       <div className="flex items-start justify-between gap-3">
         <div>
           <h3 className="text-h3 font-sans text-ink-900">{detail.name}</h3>
           <p className="mt-0.5 text-body-sm text-ink-500">
-            {detail.field} · {detail.riasec_profile}
+            {detail.field} · {reference.name}
           </p>
         </div>
-        <Badge variant="info">Interest match</Badge>
+        <Badge variant="info">Exploratory interest overlap</Badge>
       </div>
-      {detail.description && <p className="text-body-sm text-ink-700">{detail.description}</p>}
+      {detail.description && getSectionReview(detail, 'overview') && (
+        <p className="text-body-sm text-ink-700">{detail.description}</p>
+      )}
       <p className="text-body-sm text-ink-700">
-        Shares {shared.join(', ')} with your Holland Code. This came from the career&rsquo;s own
-        interest profile, not from a rule about your results.
+        Shares {shared.join(', ')} with your Holland Code in {reference.name} (
+        {reference.interest_code}). {reference.scope_note} Nexus exploratory heuristic, not a
+        validated suitability score or admission decision.
       </p>
       <Link
         to={`/careers/${detail.slug || detail.id}`}

@@ -1,8 +1,9 @@
 import { cn } from '@/lib/cn';
+import '@/styles/rail-assessment.css';
 
 /**
- * One assessment item (ui-spec §3.6). Five full-width option rows, 48px each,
- * with the label inside the target — not a bare radio dot.
+ * One assessment item with five face-icon tiles. Native radio inputs keep
+ * keyboard selection and the original 0..4 response values intact.
  *
  * There is deliberately no Skip control: §4.2.2 requires submission to be
  * blocked while any item is unanswered, and Figure 4.6's skip button loses
@@ -21,29 +22,24 @@ import { cn } from '@/lib/cn';
 export function QuestionCard({ question, labels, value, onChange, index, total, highlight }) {
   const name = `question-${question.id}`;
   return (
-    <fieldset
-      className={cn(
-        'rounded-modal border p-5 shadow-card md:p-8',
-        highlight ? 'border-rust-600 bg-rust-100' : 'border-pine-100 bg-surface'
-      )}
-    >
-      <legend className="sr-only">{`Question ${index + 1} of ${total}`}</legend>
-      <p className="text-caption text-ink-500">
+    <fieldset className={cn('rail-question-card', highlight && 'needs-answer')}>
+      <legend className="sr-only">{`Question ${index + 1} of ${total}: ${question.text}`}</legend>
+      <p className="rail-question-position">
         Question {index + 1} of {total}
       </p>
-      <p className="mt-3 text-h2 font-serif text-ink-900 md:text-h1">{question.text}</p>
+      <p className="rail-question-text">{question.text}</p>
+      <p className="rail-question-hint">Choose how much you would enjoy this activity.</p>
 
-      <div className="mt-7 flex flex-col gap-3">
+      <div className="rail-response-options">
         {labels.map((label, optionValue) => {
           const checked = value === optionValue;
           return (
             <label
               key={label}
               className={cn(
-                'flex min-h-[56px] cursor-pointer items-center gap-3 rounded-card border px-4 transition-all duration-200',
-                checked
-                  ? 'border-pine-700 bg-pine-700 text-white shadow-card'
-                  : 'border-ink-100 bg-paper hover:-translate-y-0.5 hover:border-pine-300 hover:bg-pine-50'
+                'rail-response',
+                `rail-response-${optionValue}`,
+                checked && 'is-selected'
               )}
             >
               <input
@@ -52,20 +48,56 @@ export function QuestionCard({ question, labels, value, onChange, index, total, 
                 value={optionValue}
                 checked={checked}
                 onChange={() => onChange(optionValue)}
-                className="h-4 w-4 accent-lime"
+                className="sr-only"
               />
-              <span className={cn('text-body-sm font-medium', checked ? 'text-white' : 'text-ink-900')}>{label}</span>
+              <SentimentFace value={optionValue} />
+              <span className="rail-response-label">{label}</span>
+              <span className="rail-response-check" aria-hidden="true">
+                ✓
+              </span>
             </label>
           );
         })}
       </div>
 
       {highlight && (
-        <p role="alert" className="mt-3 text-body-sm text-rust-600">
+        <p role="alert" className="rail-question-warning">
           This question still needs an answer.
         </p>
       )}
     </fieldset>
+  );
+}
+
+function SentimentFace({ value }) {
+  const mouths = [
+    'M13 29Q22 18 31 29',
+    'M14 28Q22 22 30 28',
+    'M14 27H30',
+    'M14 25Q22 33 30 25',
+    'M13 24Q22 38 31 24Z',
+  ];
+  return (
+    <svg className="rail-response-face" viewBox="0 0 44 44" fill="none" aria-hidden="true">
+      <circle cx="22" cy="22" r="18" stroke="currentColor" strokeWidth="1.8" />
+      <circle cx="15.5" cy="17" r="1.6" fill="currentColor" />
+      <circle cx="28.5" cy="17" r="1.6" fill="currentColor" />
+      {value === 0 && (
+        <path
+          d="M12 12L18 14M26 14L32 12"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+        />
+      )}
+      <path
+        d={mouths[value] || mouths[2]}
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   );
 }
 

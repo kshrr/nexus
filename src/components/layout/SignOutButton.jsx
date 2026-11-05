@@ -14,12 +14,14 @@ import { useAuth } from '@/context/useAuth';
  * One implementation shared by the student rail, the mobile header and the
  * admin bar so the behaviour cannot drift between them.
  *
- * @param {{ variant?: 'rail' | 'inline', className?: string }} props
+ * @param {{ variant?: 'rail' | 'inline' | 'icon', className?: string }} props
  */
 export function SignOutButton({ variant = 'inline', className }) {
   const { signOut } = useAuth();
   const navigate = useNavigate();
   const [busy, setBusy] = useState(false);
+  const iconOnly = variant === 'icon';
+  const label = busy ? 'Signing out…' : 'Sign out';
 
   async function handleSignOut() {
     if (busy) return;
@@ -43,6 +45,9 @@ export function SignOutButton({ variant = 'inline', className }) {
       type="button"
       onClick={handleSignOut}
       disabled={busy}
+      aria-label={iconOnly ? label : undefined}
+      title={iconOnly ? label : undefined}
+      aria-busy={busy || undefined}
       className={cn(
         variant === 'rail'
           ? 'flex w-full items-center rounded-input border-l-[3px] border-transparent px-2 py-1.5 text-left text-body-sm text-ink-700 hover:bg-ink-100'
@@ -51,7 +56,27 @@ export function SignOutButton({ variant = 'inline', className }) {
         className
       )}
     >
-      {busy ? 'Signing out…' : 'Sign out'}
+      {iconOnly ? (
+        <>
+          <svg
+            viewBox="0 0 24 24"
+            width="20"
+            height="20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M9 4H4v16h5M9 12h12m-4-4 4 4-4 4" />
+          </svg>
+          <span className="sr-only">{label}</span>
+        </>
+      ) : (
+        label
+      )}
     </button>
   );
 }

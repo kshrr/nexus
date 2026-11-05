@@ -8,13 +8,13 @@ vi.mock('@/context/useAuth', () => ({ useAuth: () => ({ signOut: h.signOut }) })
 
 import { SignOutButton } from './SignOutButton';
 
-function setup() {
+function setup(props = {}) {
   return render(
     <MemoryRouter initialEntries={['/dashboard']}>
       <Routes>
         <Route path="/" element={<div>landing page</div>} />
         <Route path="/login" element={<div>login page</div>} />
-        <Route path="/dashboard" element={<SignOutButton />} />
+        <Route path="/dashboard" element={<SignOutButton {...props} />} />
       </Routes>
     </MemoryRouter>
   );
@@ -57,5 +57,13 @@ describe('SignOutButton (architecture.md §5.5)', () => {
     expect(screen.getByRole('button', { name: /sign out/i })).toHaveFocus();
     await user.keyboard('{Enter}');
     expect(h.signOut).toHaveBeenCalled();
+  });
+  it('keeps icon-only sign out named and functional', async () => {
+    const user = userEvent.setup();
+    setup({ variant: 'icon' });
+    const button = screen.getByRole('button', { name: 'Sign out', exact: true });
+    expect(button.querySelector('svg')).not.toBeNull();
+    await user.click(button);
+    expect(await screen.findByText('landing page')).toBeInTheDocument();
   });
 });

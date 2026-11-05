@@ -6,13 +6,21 @@
  */
 export function AdminPageHeader({ title, description, actions }) {
   return (
-    <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
-      <div>
-        <h1 className="text-h1 font-serif">{title}</h1>
-        {description && <p className="mt-1 max-w-prose text-body-sm text-ink-700">{description}</p>}
+    <header className="admin-page-banner">
+      <div className="admin-banner-copy">
+        <p className="admin-banner-eyebrow">
+          <span aria-hidden="true">N</span> NEXUS / ADMINISTRATION
+        </p>
+        <h1>{title}</h1>
+        {description && <p className="admin-banner-description">{description}</p>}
       </div>
-      {actions && <div className="flex gap-2">{actions}</div>}
-    </div>
+      {actions && <div className="admin-banner-actions">{actions}</div>}
+      <div className="admin-banner-track" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+    </header>
   );
 }
 

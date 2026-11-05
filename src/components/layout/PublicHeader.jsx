@@ -4,14 +4,18 @@ import { cn } from '@/lib/cn';
 import { useAuth } from '@/context/useAuth';
 import { Wordmark } from './Wordmark';
 import { Icon } from '@/components/ui';
+import { SignOutButton } from './SignOutButton';
+import { ADMIN_NAV } from '@/config/navigation';
+import '@/styles/landing.css';
+import '@/styles/site-chrome.css';
 
 // Existing destinations, grouped together for the public navigation.
 const searchLinks = [
-  { to: '/recommendations', label: 'Courses', icon: 'book' },
+  { to: '/courses', label: 'Courses', icon: 'book' },
   { to: '/careers', label: 'Careers', icon: 'career' },
 ];
 
-function SearchLinks({ onNavigate }) {
+function HeaderLinks({ label, links, onNavigate }) {
   const detailsRef = useRef(null);
   function close() {
     if (detailsRef.current) detailsRef.current.open = false;
@@ -32,15 +36,15 @@ function SearchLinks({ onNavigate }) {
       }}
     >
       <summary>
-        Search
+        {label}
         <svg className="public-search-chevron" viewBox="0 0 16 16" fill="none" aria-hidden="true">
           <path d="m4 6 4 4 4-4" stroke="currentColor" strokeWidth="1.5" />
         </svg>
       </summary>
       <div className="public-search-links">
-        {searchLinks.map((item) => (
-          <NavLink key={item.to} to={item.to} onClick={close}>
-            <Icon name={item.icon} className="h-4 w-4" />
+        {links.map((item) => (
+          <NavLink key={item.to} to={item.to} end={item.end} onClick={close}>
+            {item.icon && <Icon name={item.icon} className="h-4 w-4" />}
             {item.label}
             <Icon name="arrowUpRight" className="public-search-arrow h-4 w-4" />
           </NavLink>
@@ -51,7 +55,10 @@ function SearchLinks({ onNavigate }) {
 }
 
 export function PublicHeader() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, role } = useAuth();
+  const isStudent = isAuthenticated && role !== 'admin';
+  const homePath = role === 'admin' ? '/admin' : '/dashboard';
+  const homeLabel = role === 'admin' ? 'Admin workspace' : 'Dashboard';
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   useEffect(() => {
@@ -64,7 +71,13 @@ export function PublicHeader() {
     setOpen(false);
   }
   return (
-    <header className={cn('nexus-public-header', scrolled && 'is-scrolled')}>
+    <header
+      className={cn(
+        'nexus-public-header',
+        scrolled && 'is-scrolled',
+        isStudent && 'has-student-actions'
+      )}
+    >
       <div className="landing-shell public-header-inner">
         <Wordmark className="public-wordmark" />
         <nav
@@ -78,36 +91,75 @@ export function PublicHeader() {
             }
           }}
         >
-          <SearchLinks onNavigate={closeNavigation} />
+          
+          <HeaderLinks label="Search" links={searchLinks} onNavigate={closeNavigation} />
           <NavLink to="/scholarships" className="public-nav-link" onClick={closeNavigation}>
             Scholarships
           </NavLink>
-          <SearchLinks onNavigate={closeNavigation} />
           <NavLink to="/find-your-path" className="public-nav-link" onClick={closeNavigation}>
             Find Your Path
           </NavLink>
-          <div className="public-mobile-auth">
-            {isAuthenticated ? (
-              <Link to="/dashboard" className="landing-button" onClick={closeNavigation}>
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className="public-login" onClick={closeNavigation}>
-                  Login
-                </Link>
-                <Link to="/register" className="landing-button" onClick={closeNavigation}>
-                  Sign up
-                </Link>
-              </>
-            )}
-          </div>
+          {isStudent && (
+            <NavLink to="/dashboard" end className="public-nav-link" onClick={closeNavigation}>
+              Dashboard
+            </NavLink>
+          )}
+          {isAuthenticated && role === 'admin' && (
+            <HeaderLinks label="Workspace" links={ADMIN_NAV} onNavigate={closeNavigation} />
+          )}
+          {!isStudent && (
+            <div className="public-mobile-auth">
+              {isAuthenticated ? (
+                <>
+                  <Link to={homePath} className="landing-button" onClick={closeNavigation}>
+                    {homeLabel}
+                  </Link>
+                  <SignOutButton className="site-header-signout" />
+                </>
+              ) : (
+                <>
+                  <Link to="/login" className="public-login" onClick={closeNavigation}>
+                    Login
+                  </Link>
+                  <Link to="/register" className="landing-button" onClick={closeNavigation}>
+                    Sign up
+                  </Link>
+                </>
+              )}
+            </div>
+          )}
         </nav>
-        <div className="public-header-actions">
-          {isAuthenticated ? (
-            <Link to="/dashboard" className="landing-button">
-              Dashboard <Icon name="arrowUpRight" className="h-4 w-4" />
-            </Link>
+        <div className="public-header-actions" role="group" aria-label="Account actions">
+          {isStudent ? (
+            <>
+              <NavLink
+                to="/saved"
+                className="site-account-icon"
+                aria-label="Saved"
+                title="Saved"
+                onClick={closeNavigation}
+              >
+                <Icon name="bookmark" />
+              </NavLink>
+              <NavLink
+                to="/profile"
+                end
+                className="site-account-icon"
+                aria-label="Profile"
+                title="Profile"
+                onClick={closeNavigation}
+              >
+                <Icon name="user" />
+              </NavLink>
+              <SignOutButton variant="icon" className="site-account-icon" />
+            </>
+          ) : isAuthenticated ? (
+            <>
+              <Link to={homePath} className="landing-button">
+                {homeLabel} <Icon name="arrowUpRight" className="h-4 w-4" />
+              </Link>
+              <SignOutButton className="site-header-signout" />
+            </>
           ) : (
             <>
               <Link to="/login" className="public-login">
