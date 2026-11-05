@@ -327,3 +327,11 @@ and `supabase/tests/scholarship.test.mjs`.
 
 trigger-crawl accepts a POST body with mode discovery, monitoring or combined (default). It checks the caller's admin role, rate limit and active-run state, then dispatches crawler.yml with a generated request_id. The response reports queued dispatch, not completed extraction. The admin page polls the corresponding crawl_logs request_id.
 BRAVE_SEARCH_API_KEY belongs only in GitHub Actions secrets; the Edge Function keeps its existing GitHub dispatch settings. Verify GITHUB_WORKFLOW_REF names the deployed workflow branch. Apply migrations 0014 and 0015 before deploying the updated app/function. See docs/scholarship-discovery-deployment.md for the reviewable deployment sequence.
+
+## University course refresh trigger
+
+`trigger-course-crawl` accepts source `um`, `unimap`, `usim` or `all` from an authenticated admin, for example `POST { "source": "usim" }`. It checks `is_admin()`, the five-per-hour manual rate limit and source-specific active leases, then dispatches `course-crawler.yml`. Selected responses retain `dispatched`, `source`, `request_id` and `requested_at`. All-source responses contain independent `requests` outcomes; partial failure preserves accepted UUIDs. One batch consumes one rate-limit event. Dispatch acceptance does not mean courses were imported. The admin screen correlates exact university/request UUIDs and actual outcomes.
+
+Deploy the original migration `0016_course_catalogue_sync.sql` and expansion `0020_three_university_course_sources.sql` before this function and UI, reviewing intervening pending migrations. Source choices come from the migration-managed registry. The function reuses `GITHUB_DISPATCH_TOKEN`, `GITHUB_REPO` and `GITHUB_WORKFLOW_REF`; optionally set `COURSE_CRAWLER_WORKFLOW_FILE` (default `course-crawler.yml`). The function uses the caller's JWT, not a service-role key. Only the Python Actions job receives that secret.
+
+See [course sync deployment guide](../../docs/course-catalogue-sync-deployment.md). The workflow must be available in the private repository and selected branch before an admin refresh can run.

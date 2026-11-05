@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Confirm your Nexus email</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 32px 16px;
+      background: #faf7ef;
+      color: #192b36;
+      font-family: Arial, sans-serif;
+    "
+  >
+    <div
+      style="
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border-radius: 16px;
+      "
+    >
+      <p style="margin: 0 0 24px; font-weight: bold; letter-spacing: 3px">NEXUS</p>
+      <h1 style="font-size: 24px">Confirm your email address</h1>
+      <p>Enter this verification code on the Nexus website to finish creating your account:</p>
+      <p
+        style="
+          padding: 20px;
+          text-align: center;
+          background: #faf7ef;
+          border-radius: 8px;
+          font-size: 32px;
+          font-weight: bold;
+          letter-spacing: 8px;
+        "
+      >
+        {{ .Token }}
+      </p>
+      <p>Or confirm your email using this link:</p>
+      <p>
+        <a
+          href="{{ .ConfirmationURL }}"
+          style="
+            display: inline-block;
+            padding: 14px 24px;
+            border-radius: 24px;
+            background: #245746;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+          "
+          >Confirm email address</a
+        >
+      </p>
+      <p style="font-size: 14px">
+        The code and link expire in 10 minutes. Use either option once to confirm your email. If you
+        request a new email, use the latest code or link.
+      </p>
+      <p style="font-size: 14px; color: #58656d">
+        If you didn’t create a Nexus account, you can ignore this email.
+      </p>
+    </div>
+  </body>
+</html>

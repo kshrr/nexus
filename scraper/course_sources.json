@@ -1,0 +1,25 @@
+{
+  "um": {
+    "name": "Universiti Malaya", "state": "Kuala Lumpur",
+    "levels": ["foundation", "diploma", "degree"], "session": "2026/2027",
+    "destinations": {
+      "study.um.edu.my": {"path": "/(?:undergraduate-faculties|programmes|page-faculty-foundation|diploma-faculty-centre|dip-faculty-of-(?:medicine|nursing)|universiti-malaya-centre-for-continuing-education|academy-of-islamic-studies-courses|malay-studies-courses|faculty-[A-Za-z0-9-]+|bachelors?-[A-Za-z0-9-]+|foundation-[A-Za-z0-9-]+|diploma-[A-Za-z0-9-]+)", "query": ""}
+    }
+  },
+  "unimap": {
+    "name": "Universiti Malaysia Perlis", "state": "Perlis",
+    "levels": ["diploma", "degree"], "session": "2026/2027",
+    "destinations": {
+      "www.unimap.edu.my": {"path": "/(?:index\\.php/(?:en|ms)/(?:syarat-kemasukan|kemasukan/pra-siswazah)|images/kemasukan/[^?#]+\\.pdf)", "query": ""},
+      "admission.unimap.edu.my": {"path": "/(?:|index\\.php|local\\.php|international\\.php|programme\\.php|images/[^?#]+\\.pdf)", "query": "id"}
+    }
+  },
+  "usim": {
+    "name": "Universiti Sains Islam Malaysia", "state": "Negeri Sembilan",
+    "levels": ["foundation", "degree"], "session": "2026/2027",
+    "destinations": {
+      "admission.usim.edu.my": {"path": "/(?:academic-programmes|tamhidi|undergraduate|download)/?|/wp-content/uploads/[0-9]{4}/[0-9]{2}/[^?#]+\\.pdf", "query": "pid"},
+      "tamhidi.usim.edu.my": {"path": "/wp-content/uploads/[0-9]{4}/[0-9]{2}/[^?#]+\\.pdf", "query": ""}
+    }
+  }
+}
