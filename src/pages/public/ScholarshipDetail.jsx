@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Badge, Button, Card, Icon, Skeleton } from '@/components/ui';
 import { ErrorState } from '@/components/feedback';
@@ -10,12 +10,19 @@ import { useSavedItems } from '@/hooks/useSavedItems';
 import { useAuth } from '@/context/useAuth';
 import { formatDate } from '@/lib/format';
 import { EDUCATION_LEVEL_LABELS } from '@/types';
+import { RailTabs } from '@/components/journey/RailTabs';
+import '@/styles/rail-scholarships.css';
+
+const DETAIL_TABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'eligibility', label: 'Eligibility' },
+  { id: 'applying', label: 'Applying' },
+];
 
 /**
  * Scholarship detail (FR-SCH-04 / FR10, ui-spec §3.11).
  *
- * Public route. On mobile the eligibility panel moves ABOVE the overview —
- * eligibility is what the student came for.
+ * Public route. Full information is grouped into keyboard-accessible tabs.
  *
  * The application timeline from Figure 4.5 is not built: there is no data model
  * for its stages anywhere in the documents (requirements.md §9.1 / M-09), and
@@ -25,6 +32,10 @@ export function ScholarshipDetail() {
   const { id } = useParams();
   const { isAuthenticated } = useAuth();
   const { scholarship, criteria, loading, error, reload } = useScholarship(id);
+  const [active, setActive] = useState('overview');
+  const [saveError, setSaveError] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const tabId = useId();
 
   const ids = useMemo(() => (id ? [id] : []), [id]);
   const {
@@ -33,10 +44,31 @@ export function ScholarshipDetail() {
     error: matchError,
   } = useScholarshipMatches({ scholarshipIds: ids, enabled: isAuthenticated && Boolean(id) });
   const saved = useSavedItems('scholarship');
+  useEffect(() => {
+    setActive('overview');
+    setSaveError(null);
+  }, [id]);
+
+  async function toggleSave() {
+    if (saving || saved.loading || saved.error) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const outcome = await saved.toggle('scholarship', id);
+      if (outcome?.error) setSaveError(outcome.error.message);
+    } catch (err) {
+      setSaveError(err.message || 'Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  }
 
   if (loading) {
     return (
-      <div className="mx-auto max-w-6xl px-4 py-8">
+      <div
+        className="rail-scholarship-page scholarship-detail-shell section-shell"
+        aria-busy="true"
+      >
         <Skeleton variant="text" lines={2} />
         <div className="mt-6 grid gap-6 lg:grid-cols-[1fr,340px]">
           <Skeleton variant="card" />
@@ -48,7 +80,7 @@ export function ScholarshipDetail() {
 
   if (error) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-8">
+      <div className="rail-scholarship-page scholarship-detail-shell section-shell">
         <ErrorState
           title="We couldn’t load this scholarship"
           message={error.message}
@@ -60,15 +92,12 @@ export function ScholarshipDetail() {
 
   if (!scholarship) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-12 text-center">
+      <div className="rail-scholarship-page scholarship-detail-shell section-shell text-center">
         <h1 className="text-h1 font-serif">We can’t find that scholarship</h1>
         <p className="mt-3 text-body text-ink-700">
           It may have been removed, or the link may be wrong.
         </p>
-        <Link
-          to="/scholarships"
-          className="mt-6 inline-flex h-10 items-center rounded-input bg-pine-700 px-4 text-body-sm font-medium text-white hover:bg-pine-500"
-        >
+        <Link to="/scholarships" className="scholarship-detail-link mt-6">
           Browse all scholarships
         </Link>
       </div>
@@ -91,138 +120,195 @@ export function ScholarshipDetail() {
   );
 
   return (
-    <div className="section-shell py-8 md:py-12">
-      <Link to="/scholarships" className="text-body-sm text-pine-700 hover:underline">
-        <span aria-hidden="true">‹</span> All scholarships
-      </Link>
+    <div className="rail-scholarship-page scholarship-detail-page">
+      <div className="section-shell scholarship-detail-shell">
+        <Link to="/scholarships" className="scholarship-back-link">
+          <span aria-hidden="true">‹</span> All scholarships
+        </Link>
 
-      <header className="relative mt-4 overflow-hidden rounded-modal bg-pine-900 p-6 text-white md:p-10">
-        <div className="absolute -right-16 -top-16 h-56 w-56 rounded-full border-[36px] border-pine-500/40" aria-hidden="true" />
-        <p className="text-caption font-semibold text-lime">{s.provider}</p>
-        <h1 className="mt-3 max-w-4xl text-display font-serif text-white">{s.name}</h1>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <DeadlineBadge deadline={s.deadline} expired={expired} />
-          {(s.education_levels ?? []).map((l) => (
-            <Badge key={l} variant="neutral">
-              {EDUCATION_LEVEL_LABELS[l] ?? l}
-            </Badge>
-          ))}
-          {(s.field_of_study ?? []).map((f) => (
-            <Badge key={f} variant="neutral">
-              {f}
-            </Badge>
-          ))}
-        </div>
-      </header>
-
-      {expired && (
-        <Alert variant="warning" title="This round has closed." className="mt-4">
-          The deadline was {formatDate(s.deadline)}. Providers often reopen annually — check their
-          page for the next intake.
-        </Alert>
-      )}
-
-      {s.status === 'flagged' && (
-        <Alert variant="warning" title="This record is under review." className="mt-4">
-          Our checks flagged something unusual in the source data. Treat the details below with
-          caution and confirm everything on the provider&rsquo;s own page.
-        </Alert>
-      )}
-
-      <div className="mt-8 grid gap-6 lg:grid-cols-[1fr,360px]">
-        {/* eligibility first on mobile, sidebar on desktop */}
-        <div className="lg:order-2">
-          <div className="lg:sticky lg:top-28">{checklist}</div>
-        </div>
-
-        <div className="flex flex-col gap-4 lg:order-1">
-          <Card variant="titled" title="Overview">
-            {s.description ? (
-              <p className="max-w-prose whitespace-pre-line text-body text-ink-900">
-                {s.description}
-              </p>
-            ) : (
-              <p className="text-body-sm text-ink-500">
-                No description has been recorded for this scholarship. The provider&rsquo;s page
-                will have the full details.
-              </p>
-            )}
-          </Card>
-
-          <Card variant="titled" title="Benefits and coverage">
-            {s.funding_amount ? (
-              <p className="text-body text-ink-900">{s.funding_amount}</p>
-            ) : (
-              <p className="text-body-sm text-ink-500">
-                The funding amount hasn&rsquo;t been recorded. Check the provider&rsquo;s page.
-              </p>
-            )}
-          </Card>
-
-          <Card variant="titled" title="Applying">
-            <dl className="flex flex-col gap-2 text-body-sm">
-              <div className="flex justify-between gap-4">
-                <dt className="text-ink-500">Deadline</dt>
-                <dd className="text-ink-900">
-                  {s.deadline ? formatDate(s.deadline) : 'Rolling intake'}
-                </dd>
-              </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-ink-500">Provider</dt>
-                <dd className="text-ink-900">{s.provider}</dd>
-              </div>
-              {s.updated_at && (
-                <div className="flex justify-between gap-4">
-                  <dt className="text-ink-500">Record updated</dt>
-                  <dd className="text-ink-900">{formatDate(s.updated_at)}</dd>
-                </div>
-              )}
-            </dl>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {s.application_link ? (
-                <a
-                  href={s.application_link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex h-11 items-center gap-2 rounded-pill bg-pine-700 px-5 text-body-sm font-semibold text-white hover:bg-pine-900"
-                >
-                  Apply on {applyHost}
-                  <Icon name="arrowUpRight" className="h-4 w-4" />
-                  <span className="sr-only">(opens in a new tab)</span>
-                </a>
-              ) : (
-                <p className="text-body-sm text-ink-500">
-                  No application link has been recorded for this scholarship yet.
-                </p>
-              )}
-
-              {isAuthenticated && (
-                <Button
-                  variant="secondary"
-                  onClick={() => saved.toggle('scholarship', s.id)}
-                  disabled={saved.loading}
-                >
-                  {saved.isSaved('scholarship', s.id) ? 'Saved' : 'Save this'}
-                </Button>
-              )}
-            </div>
-          </Card>
-
-          {s.source_url && (
-            <p className="text-body-sm text-ink-500">
-              Source:{' '}
-              <a
-                href={s.source_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-pine-700 underline"
-              >
-                {safeHost(s.source_url)}
-              </a>
-              {s.last_scraped_at && ` · last checked ${formatDate(s.last_scraped_at)}`}
+        <header className="scholarship-detail-heading">
+          <div>
+            <p className="scholarship-eyebrow">
+              <span aria-hidden="true">S</span> SCHOLARSHIP INFORMATION
             </p>
+            <p className="scholarship-detail-provider">{s.provider}</p>
+            <h1>{s.name}</h1>
+            <div className="scholarship-detail-status">
+              <DeadlineBadge deadline={s.deadline} expired={expired} />
+            </div>
+          </div>
+          {isAuthenticated && (
+            <Button
+              variant="secondary"
+              className="scholarship-save"
+              onClick={toggleSave}
+              disabled={saved.loading || Boolean(saved.error)}
+              loading={saving}
+              aria-pressed={saved.isSaved('scholarship', s.id)}
+              iconLeft={<Icon name="bookmark" />}
+            >
+              {saved.isSaved('scholarship', s.id) ? 'Saved' : 'Save this'}
+            </Button>
           )}
+        </header>
+
+        {saveError && (
+          <Alert variant="error" title="Couldn’t update your saved scholarship" className="mt-4">
+            {saveError}
+          </Alert>
+        )}
+        {saved.error && (
+          <Alert variant="warning" className="mt-4">
+            Saved-item status is unavailable.{' '}
+            <Button variant="link" onClick={saved.reload}>
+              Retry saved status
+            </Button>
+          </Alert>
+        )}
+
+        {expired && (
+          <Alert variant="warning" title="This round has closed." className="mt-4">
+            {s.deadline ? `The deadline was ${formatDate(s.deadline)}. ` : ''}Check the provider’s
+            page for the next intake.
+          </Alert>
+        )}
+
+        {s.status === 'flagged' && (
+          <Alert variant="warning" title="This record is under review." className="mt-4">
+            Our checks flagged something unusual in the source data. Treat the details below with
+            caution and confirm everything on the provider&rsquo;s own page.
+          </Alert>
+        )}
+
+        <div className="scholarship-details-board">
+          <RailTabs
+            id={tabId}
+            tabs={DETAIL_TABS}
+            active={active}
+            onChange={setActive}
+            label="Scholarship details"
+          />
+          <section
+            role="tabpanel"
+            id={`${tabId}-eligibility-panel`}
+            aria-labelledby={`${tabId}-eligibility`}
+            hidden={active !== 'eligibility'}
+            tabIndex={0}
+            className="scholarship-tab-panel scholarship-eligibility-panel"
+          >
+            <p className="scholarship-small-label">02 / Check your route</p>
+            {checklist}
+          </section>
+
+          <section
+            role="tabpanel"
+            id={`${tabId}-overview-panel`}
+            aria-labelledby={`${tabId}-overview`}
+            hidden={active !== 'overview'}
+            tabIndex={0}
+            className="scholarship-tab-panel"
+          >
+            <p className="scholarship-small-label">01 / About this opportunity</p>
+            <div className="scholarship-overview-grid">
+              <Card variant="titled" title="Overview">
+                {s.description ? (
+                  <p className="max-w-prose whitespace-pre-line text-body text-ink-900">
+                    {s.description}
+                  </p>
+                ) : (
+                  <p className="text-body-sm text-ink-500">
+                    No description has been recorded for this scholarship. The provider&rsquo;s page
+                    will have the full details.
+                  </p>
+                )}
+              </Card>
+
+              <Card variant="titled" title="Benefits and coverage">
+                {s.funding_amount ? (
+                  <p className="text-body text-ink-900">{s.funding_amount}</p>
+                ) : (
+                  <p className="text-body-sm text-ink-500">
+                    The funding amount hasn&rsquo;t been recorded. Check the provider&rsquo;s page.
+                  </p>
+                )}
+              </Card>
+            </div>
+            <div className="scholarship-detail-categories">
+              <h2>Study routes</h2>
+              <div className="scholarship-ticket-tags">
+                {(s.education_levels ?? []).map((level) => (
+                  <Badge key={`l-${level}`}>{EDUCATION_LEVEL_LABELS[level] ?? level}</Badge>
+                ))}
+                {(s.field_of_study ?? []).map((field) => (
+                  <Badge key={`f-${field}`}>{field}</Badge>
+                ))}
+                {!s.education_levels?.length && !s.field_of_study?.length && (
+                  <p>Study categories have not been recorded.</p>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <section
+            role="tabpanel"
+            id={`${tabId}-applying-panel`}
+            aria-labelledby={`${tabId}-applying`}
+            hidden={active !== 'applying'}
+            tabIndex={0}
+            className="scholarship-tab-panel"
+          >
+            <p className="scholarship-small-label">03 / Your next stop</p>
+            <Card variant="titled" title="Applying">
+              <dl className="scholarship-application-facts">
+                <div className="flex justify-between gap-4">
+                  <dt className="text-ink-500">Deadline</dt>
+                  <dd className="text-ink-900">
+                    {s.deadline ? formatDate(s.deadline) : 'Rolling intake'}
+                  </dd>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <dt className="text-ink-500">Provider</dt>
+                  <dd className="text-ink-900">{s.provider}</dd>
+                </div>
+                {s.updated_at && (
+                  <div className="flex justify-between gap-4">
+                    <dt className="text-ink-500">Record updated</dt>
+                    <dd className="text-ink-900">{formatDate(s.updated_at)}</dd>
+                  </div>
+                )}
+              </dl>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                {s.application_link ? (
+                  <a
+                    href={s.application_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="scholarship-detail-link"
+                  >
+                    Apply on {applyHost}
+                    <Icon name="arrowUpRight" className="h-4 w-4" />
+                    <span className="sr-only">(opens in a new tab)</span>
+                  </a>
+                ) : (
+                  <p className="text-body-sm text-ink-500">
+                    No application link has been recorded for this scholarship yet.
+                  </p>
+                )}
+              </div>
+            </Card>
+
+            {s.source_url && (
+              <p className="scholarship-source">
+                Source:{' '}
+                <a href={s.source_url} target="_blank" rel="noopener noreferrer">
+                  {safeHost(s.source_url)}
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+                {s.last_scraped_at && ` · last checked ${formatDate(s.last_scraped_at)}`}
+              </p>
+            )}
+          </section>
         </div>
       </div>
     </div>

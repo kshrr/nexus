@@ -5,6 +5,9 @@ import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { Panel } from '@/components/admin/Panel';
 import { useAdminCatalog } from '@/hooks/useAdminCatalog';
 import { useAdminCareerCourses } from '@/hooks/useAdminCareerCourses';
+import { CourseSyncPanel } from '@/components/admin/CourseSyncPanel';
+import { normaliseCareerCode, validateCareerCode } from '@/lib/careerCatalogForm';
+import { normaliseCareerEvidence } from '@/lib/careerEvidence';
 
 const TABS = [
   { id: 'courses', label: 'Courses' },
@@ -64,6 +67,7 @@ export function AdminDataManagement() {
       />
 
       <Tabs tabs={TABS} active={tab} onChange={switchTab} className="mb-4" />
+      {tab === 'courses' && <CourseSyncPanel />}
 
       <Input
         label="Search by name"
@@ -194,13 +198,10 @@ function CatalogForm({ table, row, universities, courses, onClose, onSave }) {
     setSaving(true);
     const res = await onSave(toPayload(table, form));
     if (!res?.error && table === 'careers' && row?.id) {
-      const [mappingResult, pathwayResult] = await Promise.all([
-        mappings.replace(courseIds),
-        mappings.updateRoutes(toArray(form.education_routes)),
-      ]);
-      if (mappingResult.error || pathwayResult.error) {
+      const mappingResult = await mappings.replace(courseIds);
+      if (mappingResult.error) {
         setSaving(false);
-        setError(mappingResult.error ?? pathwayResult.error);
+        setError(mappingResult.error);
         return undefined;
       }
     }
@@ -337,28 +338,56 @@ function CatalogForm({ table, row, universities, courses, onClose, onSave }) {
             />
             <Input
               label="RIASEC profile"
-              hint="Exactly three letters from RIASEC, e.g. ICR. Drives the secondary signal in §9.6."
-              maxLength={3}
+              hint="One to six distinct occupational RIASEC letters, e.g. S or IC. Leave blank for an unknown or broad profile; do not invent extra letters."
+              maxLength={6}
               value={form.riasec_profile}
               onChange={(e) =>
                 setForm((f) => ({ ...f, riasec_profile: e.target.value.toUpperCase() }))
               }
-              required
             />
+            <p className="text-body-sm text-ink-700">
+              Editing content requires a new content review. Source review:{' '}
+              {normaliseCareerEvidence(row).status.replace('_', ' ')}.
+            </p>
+            {!!normaliseCareerEvidence(row).references.length && (
+              <ul className="text-body-sm text-ink-700">
+                {normaliseCareerEvidence(row).references.map((ref) => (
+                  <li key={ref.reference_id}>
+                    {ref.name} · {ref.interest_code} — {ref.scope_note}
+                  </li>
+                ))}
+              </ul>
+            )}
             {row && (
               <fieldset className="rounded-card border border-ink-300 p-4">
-                <legend className="px-1 text-caption font-medium text-ink-700">Related courses</legend>
-                <p className="mb-3 text-body-sm text-ink-500">Map existing course records to this pathway. Changes are saved with the career.</p>
+                <legend className="px-1 text-caption font-medium text-ink-700">
+                  Related courses
+                </legend>
+                <p className="mb-3 text-body-sm text-ink-500">
+                  Map existing course records to this pathway. Changes are saved with the career.
+                </p>
                 <div className="max-h-56 space-y-2 overflow-y-auto">
                   {courses.map((course) => (
-                    <label key={course.id} className="flex min-h-11 items-start gap-3 rounded-input px-2 py-2 hover:bg-pine-50">
+                    <label
+                      key={course.id}
+                      className="flex min-h-11 items-start gap-3 rounded-input px-2 py-2 hover:bg-pine-50"
+                    >
                       <input
                         type="checkbox"
                         className="mt-1 h-4 w-4 accent-pine-700"
                         checked={courseIds.includes(course.id)}
-                        onChange={(event) => setCourseIds((ids) => event.target.checked ? [...ids, course.id] : ids.filter((id) => id !== course.id))}
+                        onChange={(event) =>
+                          setCourseIds((ids) =>
+                            event.target.checked
+                              ? [...ids, course.id]
+                              : ids.filter((id) => id !== course.id)
+                          )
+                        }
                       />
-                      <span className="text-body-sm"><span className="font-medium text-ink-900">{course.name}</span><span className="block text-ink-500">{course.field_of_study}</span></span>
+                      <span className="text-body-sm">
+                        <span className="font-medium text-ink-900">{course.name}</span>
+                        <span className="block text-ink-500">{course.field_of_study}</span>
+                      </span>
                     </label>
                   ))}
                 </div>
@@ -419,9 +448,7 @@ function validate(table, form) {
   if (table === 'careers') {
     if (!form.field.trim()) return 'A field is required.';
     if (!form.description.trim()) return 'A description is required.';
-    if (!/^[RIASEC]{3}$/.test(form.riasec_profile)) {
-      return 'The RIASEC profile must be exactly three letters from R, I, A, S, E and C.';
-    }
+    if (validateCareerCode(form.riasec_profile)) return validateCareerCode(form.riasec_profile);
   }
   return null;
 }
@@ -447,14 +474,20 @@ function toPayload(table, form) {
   }
   return {
     name: form.name.trim(),
-    slug: form.slug.trim() || form.name.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
+    slug:
+      form.slug.trim() ||
+      form.name
+        .trim()
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-|-$/g, ''),
     field: form.field.trim(),
     description: form.description.trim(),
     responsibilities: toArray(form.responsibilities),
     required_skills: toArray(form.required_skills),
     useful_subjects: toArray(form.useful_subjects),
     education_routes: toArray(form.education_routes),
-    riasec_profile: form.riasec_profile,
+    riasec_profile: normaliseCareerCode(form.riasec_profile),
   };
 }
 

@@ -1,24 +1,26 @@
 import { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/useAuth';
 import { Button, Input } from '@/components/ui';
 import { AuthLayout } from './AuthLayout';
+import { validateEmail } from '@/lib/validation';
 
-const MAX_ATTEMPTS = 5; // FR-SEC-02 / V-03 — client guard; the server enforces the real cap.
+const MAX_ATTEMPTS = 5; // UX guard only; server rate limits remain authoritative.
 
 /**
  * Email verification (FR01 / NFR01, architecture.md §5.2).
  *
- * The 6-digit OTP, its 10-minute expiry and single use are enforced by Supabase
- * Auth. This screen adds the attempt cap: after 5 wrong entries the field locks
- * and a fresh code must be requested. On success a session is issued and the
- * user is routed to /profile-setup.
+ * Supabase generates and checks the OTP; length and expiry are project settings.
+ * After 5 wrong entries this screen locks until a fresh code is requested.
+ * Both code verification and a session from the email link lead to profile setup.
  */
 export function Verify() {
-  const { verifyOtp, resendOtp } = useAuth();
+  const { verifyOtp, resendOtp, isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const email = location.state?.email ?? '';
+  const registrationEmail = location.state?.email ?? '';
+  const [enteredEmail, setEnteredEmail] = useState('');
+  const email = (registrationEmail || enteredEmail).trim();
 
   const [code, setCode] = useState('');
   const [error, setError] = useState('');
@@ -30,15 +32,27 @@ export function Verify() {
 
   async function onSubmit(e) {
     e.preventDefault();
-    if (locked) return;
+    if (locked || busy || loading) return;
+    if (validateEmail(email)) {
+      setError('Enter the email address you used to register.');
+      return;
+    }
     if (!/^\d{6}$/.test(code)) {
       setError('Enter the 6-digit code from your email.');
       return;
     }
     setError('');
+    setResent(false);
     setBusy(true);
-    const { error: err } = await verifyOtp(email, code);
-    setBusy(false);
+    let err;
+    try {
+      ({ error: err } = await verifyOtp(email, code));
+    } catch {
+      setError('Could not verify your code. Check your connection and try again.');
+      return;
+    } finally {
+      setBusy(false);
+    }
 
     if (!err) {
       navigate('/profile-setup', { replace: true });
@@ -60,20 +74,39 @@ export function Verify() {
   }
 
   async function onResend() {
-    await resendOtp(email);
-    setResent(true);
-    setAttemptsLeft(MAX_ATTEMPTS);
+    if (busy || loading) return;
+    if (validateEmail(email)) {
+      setError('Enter the email address you used to register.');
+      return;
+    }
+    setBusy(true);
+    setResent(false);
     setError('');
-    setCode('');
+    try {
+      const { error: err } = await resendOtp(email);
+      if (err) {
+        setError(err.message);
+        return;
+      }
+      setResent(true);
+      setAttemptsLeft(MAX_ATTEMPTS);
+      setCode('');
+    } catch {
+      setError('Could not send a new code. Check your connection and try again.');
+    } finally {
+      setBusy(false);
+    }
   }
+
+  if (!loading && isAuthenticated) return <Navigate to="/profile-setup" replace />;
 
   return (
     <AuthLayout
       title="Check your email"
       subtitle={
-        email
-          ? `We sent a 6-digit code to ${email}. It expires in 10 minutes.`
-          : 'Enter the 6-digit code we emailed you.'
+        registrationEmail
+          ? `We sent a verification email to ${registrationEmail}. Use the confirmation link, or enter the 6-digit code below if your email includes one.`
+          : 'Use the confirmation link in your email, or enter your registration email and 6-digit code below.'
       }
       footer={
         <Link to="/login" className="text-pine-700 underline">
@@ -82,6 +115,17 @@ export function Verify() {
       }
     >
       <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+        {!registrationEmail && (
+          <Input
+            label="Email"
+            type="email"
+            autoComplete="email"
+            value={enteredEmail}
+            onChange={(e) => setEnteredEmail(e.target.value)}
+            disabled={busy || loading}
+            required
+          />
+        )}
         <Input
           label="Verification code"
           inputMode="numeric"
@@ -90,20 +134,25 @@ export function Verify() {
           value={code}
           onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
           error={error}
-          disabled={locked}
+          disabled={locked || busy || loading}
           required
         />
-        <Button type="submit" fullWidth loading={busy} disabled={locked}>
+        <Button type="submit" fullWidth loading={busy} disabled={locked || loading}>
           Verify and continue
         </Button>
         <button
           type="button"
           className="text-body-sm text-pine-700 underline disabled:text-ink-500"
-          disabled={!email || (resent && !locked)}
+          disabled={!email || busy || loading}
           onClick={onResend}
         >
-          {resent ? 'New code sent — check your inbox' : 'Resend code'}
+          Resend code
         </button>
+        {resent && (
+          <p role="status" className="text-body-sm text-pine-700">
+            New code sent — check your inbox.
+          </p>
+        )}
       </form>
     </AuthLayout>
   );

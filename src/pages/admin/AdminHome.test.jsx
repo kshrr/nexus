@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 
 globalThis.ResizeObserver = class ResizeObserver {
@@ -34,13 +34,15 @@ const h = vi.hoisted(() => ({
     reload: vi.fn(),
   },
   audit: { entries: [], loading: false, error: null, reload: vi.fn() },
+  running: null,
+  trigger: vi.fn().mockResolvedValue({ data: {} }),
 }));
 
 vi.mock('@/hooks/useAdminOps', () => ({
   useAdminOverview: () => h.overview,
-  useCrawlRunning: () => ({ running: null, loading: false, refresh: vi.fn() }),
+  useCrawlRunning: () => ({ running: h.running, loading: false, refresh: vi.fn() }),
   useTriggerCrawl: () => ({
-    trigger: vi.fn().mockResolvedValue({ data: {} }),
+    trigger: h.trigger,
     pending: false,
     result: null,
     error: null,
@@ -62,9 +64,47 @@ import { AdminAudit } from './AdminAudit';
 
 const wrap = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  h.running = null;
+});
 
 describe('AdminHome — the four operational facts (ui-spec §10.1)', () => {
+  it('presents charts and recent activity together in a named operations board', () => {
+    wrap(<AdminHome />);
+    const board = screen.getByRole('region', { name: 'Operations board' });
+    for (const name of ['Scholarship status', 'Crawler performance', 'Recent activity']) {
+      expect(within(board).getByRole('heading', { name })).toBeVisible();
+    }
+    expect(screen.getByRole('navigation', { name: 'Quick access' })).toBeVisible();
+  });
+  it('keeps dashboard refresh and crawler-running protection intact', () => {
+    h.running = { id: 'run-1' };
+    wrap(<AdminHome />);
+    expect(screen.getByRole('button', { name: 'Crawler running' })).toBeDisabled();
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh', exact: true }));
+    expect(h.overview.reload).toHaveBeenCalledOnce();
+    expect(h.trigger).not.toHaveBeenCalled();
+  });
+  it('retains the crawler chart series toggles', () => {
+    h.overview.stats.crawlHistory = [
+      {
+        id: 'r1',
+        started_at: '2026-10-13T08:00:00Z',
+        records_inserted: 4,
+        records_updated: 2,
+        records_failed: 0,
+      },
+    ];
+    wrap(<AdminHome />);
+    const toggle = screen.getByRole('button', { name: 'New', exact: true });
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-pressed', 'true');
+    h.overview.stats.crawlHistory = [];
+  });
   it('shows the operational and catalogue summary', () => {
     wrap(<AdminHome />);
     expect(screen.getByText('Last crawler run')).toBeInTheDocument();

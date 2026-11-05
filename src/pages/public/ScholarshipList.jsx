@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Alert, Button, Card, EmptyState, Icon, Input, Skeleton } from '@/components/ui';
+import { Alert, Button, EmptyState, Icon, Input, Skeleton } from '@/components/ui';
 import { ErrorState } from '@/components/feedback';
 import { ScholarshipCard } from '@/components/scholarship/ScholarshipCard';
 import { ScholarshipFilters } from '@/components/scholarship/ScholarshipFilters';
@@ -9,6 +9,7 @@ import { useScholarshipMatches } from '@/hooks/useScholarshipMatches';
 import { useSavedItems } from '@/hooks/useSavedItems';
 import { useAuth } from '@/context/useAuth';
 import { pluralise } from '@/lib/format';
+import '@/styles/rail-scholarships.css';
 
 const EMPTY_FILTERS = { fields: [], providers: [], levels: [] };
 
@@ -23,6 +24,43 @@ export function ScholarshipList() {
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState(EMPTY_FILTERS);
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [saveError, setSaveError] = useState(null);
+  const [savingId, setSavingId] = useState(null);
+  const sheetRef = useRef(null);
+  const closeRef = useRef(null);
+
+  useEffect(() => {
+    if (!sheetOpen) return;
+    const previousFocus = document.activeElement;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    closeRef.current?.focus();
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      previousFocus?.focus();
+    };
+  }, [sheetOpen]);
+
+  function handleSheetKeys(event) {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      setSheetOpen(false);
+    }
+    if (event.key !== 'Tab') return;
+    const controls = sheetRef.current?.querySelectorAll(
+      'button:not(:disabled), input:not(:disabled), a[href]'
+    );
+    if (!controls?.length) return;
+    const first = controls[0];
+    const last = controls[controls.length - 1];
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  }
 
   const facets = useScholarshipFacets();
   const { items, total, loading, loadingMore, error, hasMore, loadMore, reload } = useScholarships({
@@ -36,18 +74,31 @@ export function ScholarshipList() {
     enabled: isAuthenticated && visibleIds.length > 0,
   });
   const saved = useSavedItems('scholarship');
+  async function toggleSave(id) {
+    if (savingId || saved.loading || saved.error) return;
+    setSaveError(null);
+    setSavingId(id);
+    try {
+      const outcome = await saved.toggle('scholarship', id);
+      if (outcome?.error) setSaveError(outcome.error.message);
+    } catch (err) {
+      setSaveError(err.message || 'Please try again.');
+    } finally {
+      setSavingId(null);
+    }
+  }
 
   const activeCount = filters.fields.length + filters.providers.length + filters.levels.length;
 
   // "Recommended for you": the best-matching records among those on screen.
   const recommended = useMemo(() => {
-    if (!isAuthenticated) return [];
+    if (!isAuthenticated || loading || error || matching) return [];
     return items
       .map((s) => ({ s, m: byId(s.id) }))
       .filter(({ m }) => m && m.checkable_count > 0 && m.eligibility_score >= 50)
       .sort((a, b) => b.m.eligibility_score - a.m.eligibility_score)
       .slice(0, 3);
-  }, [items, byId, isAuthenticated]);
+  }, [items, byId, isAuthenticated, loading, error, matching]);
 
   const filterPanel = (
     <ScholarshipFilters
@@ -59,157 +110,245 @@ export function ScholarshipList() {
   );
 
   return (
-    <div>
-      <section className="bg-pine-900 py-12 text-white md:py-16">
-        <div className="section-shell grid gap-8 md:grid-cols-[1fr,auto] md:items-end">
-          <div>
-            <p className="inline-flex items-center gap-2 text-caption font-semibold text-lime"><Icon name="scholarship" className="h-4 w-4" /> OPPORTUNITY DISCOVERY</p>
-            <h1 className="mt-3 text-display font-serif text-white">Scholarships for your next chapter.</h1>
-            <p className="mt-4 max-w-2xl text-body text-pine-100">Explore published opportunities from trusted records. Sign in to see eligibility indicators shaped by your profile.</p>
+    <div className="rail-scholarship-page">
+      <section className="scholarship-hero">
+        <div className="section-shell scholarship-hero-inner">
+          <div className="scholarship-hero-content">
+            <p className="scholarship-eyebrow">
+              <span aria-hidden="true">S</span> OPPORTUNITY DISCOVERY
+            </p>
+            <h1>Scholarships</h1>
+            <p className="scholarship-hero-description">Find suitable scholarships for you.</p>
           </div>
-          <div className="hidden h-24 w-24 rotate-6 place-items-center rounded-[28px] bg-lime text-pine-900 md:grid"><Icon name="scholarship" className="h-10 w-10" /></div>
+          <aside className="scholarship-directory-ticket" aria-label="Scholarship directory">
+            <div className="scholarship-directory-ticket-top">
+              <span>YOUR NEXT STOP</span>
+              <Icon name="scholarship" className="h-5 w-5" />
+            </div>
+            <h2>Funding possibilities.</h2>
+            <p className="scholarship-directory-ticket-note">One directory. More opportunities.</p>
+            <dl
+              className="scholarship-directory-ticket-counts"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              <div>
+                <dt id="scholarship-ticket-total-label">
+                  {search.trim() || activeCount
+                    ? 'Matching scholarships'
+                    : 'Published scholarships'}
+                </dt>
+                <dd aria-labelledby="scholarship-ticket-total-label">
+                  {loading || error ? '—' : total}
+                </dd>
+              </div>
+              <div>
+                <dt id="scholarship-ticket-providers-label">Listed providers</dt>
+                <dd aria-labelledby="scholarship-ticket-providers-label">
+                  {facets.loading || error || !facets.providers.length
+                    ? '—'
+                    : facets.providers.length}
+                </dd>
+              </div>
+            </dl>
+            <div className="scholarship-directory-ticket-foot">
+              <span>NEXUS / MALAYSIA</span>
+              <span className="scholarship-directory-barcode" aria-hidden="true" />
+            </div>
+          </aside>
         </div>
       </section>
 
-      <div className="section-shell py-8 md:py-12">
-
-      <div className="lg:flex lg:gap-8">
-        {/* --- filter rail (desktop) ---------------------------------- */}
-        <aside className="hidden w-64 shrink-0 lg:block"><div className="sticky top-28 rounded-card border border-pine-100 bg-surface p-5 shadow-sm">{filterPanel}</div></aside>
-
-        {/* --- results ------------------------------------------------ */}
-        <div className="min-w-0 flex-1">
-          <div className="rounded-card border border-pine-100 bg-surface p-4 shadow-card">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <Input
-              label="Search"
-              className="flex-1"
-              placeholder="Scholarship or provider name"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              type="search"
-            />
-            <Button variant="secondary" className="lg:hidden" iconLeft={<Icon name="search" className="h-4 w-4" />} onClick={() => setSheetOpen(true)}>
-              Filters{activeCount > 0 ? ` (${activeCount})` : ''}
-            </Button>
+      <div className="section-shell scholarship-catalogue-shell">
+        <div className="scholarship-catalogue-layout">
+          {/* --- filter rail (desktop) ---------------------------------- */}
+          <aside className="scholarship-filter-rail" aria-label="Filter scholarships">
+            <div className="scholarship-filter-board">
+              <p className="scholarship-small-label">Choose your route</p>
+              {filterPanel}
             </div>
-            <p className="mt-3 text-body-sm text-ink-500" aria-live="polite">{loading ? 'Loading opportunities…' : pluralise(total, 'scholarship')}</p>
-          </div>
+          </aside>
 
-          {/* --- recommended for you -------------------------------- */}
-          {isAuthenticated && recommended.length > 0 && (
-            <section className="mt-6">
-              <div className="mb-4 flex items-center gap-3"><span className="grid h-9 w-9 place-items-center rounded-xl bg-lime text-pine-900"><Icon name="sparkles" className="h-4 w-4" /></span><h2 className="text-h2 font-serif">Recommended for you</h2></div>
-              <div className="grid gap-4 md:grid-cols-2">
-                {recommended.map(({ s, m }) => (
-                  <ScholarshipCard
-                    key={`rec-${s.id}`}
-                    scholarship={s}
-                    match={m}
-                    authenticated
-                    saved={saved.isSaved('scholarship', s.id)}
-                    onToggleSave={() => saved.toggle('scholarship', s.id)}
-                  />
-                ))}
+          {/* --- results ------------------------------------------------ */}
+          <div className="min-w-0 flex-1">
+            <div className="scholarship-search-board">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <Input
+                  label="Search"
+                  className="min-w-0 flex-1"
+                  placeholder="Scholarship or provider name"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  type="search"
+                />
+                <Button
+                  variant="secondary"
+                  className="lg:hidden"
+                  iconLeft={<Icon name="search" className="h-4 w-4" />}
+                  onClick={() => setSheetOpen(true)}
+                >
+                  Filters{activeCount > 0 ? ` (${activeCount})` : ''}
+                </Button>
               </div>
-            </section>
-          )}
+              <p className="mt-3 text-body-sm text-ink-500" aria-live="polite">
+                {loading ? 'Loading opportunities…' : pluralise(total, 'scholarship')}
+              </p>
+            </div>
 
-          {!isAuthenticated && !loading && items.length > 0 && (
-            <Alert variant="info" className="mt-6">
-              <strong>Sign in to see which scholarships you qualify for.</strong>{' '}
-              <Link to="/login" className="text-pine-700 underline">
-                Sign in
-              </Link>{' '}
-              or{' '}
-              <Link to="/register" className="text-pine-700 underline">
-                create an account
-              </Link>
-              .
-            </Alert>
-          )}
-
-          {/* --- all scholarships ------------------------------------ */}
-          <section className="mt-6">
-            {isAuthenticated && recommended.length > 0 && (
-              <h2 className="mb-4 text-h2 font-serif">All scholarships</h2>
+            {saveError && (
+              <Alert
+                variant="error"
+                title="Couldn’t update your saved scholarship"
+                className="mt-4"
+              >
+                {saveError}
+              </Alert>
+            )}
+            {saved.error && (
+              <Alert variant="warning" className="mt-4">
+                Saved-item status is unavailable.{' '}
+                <Button variant="link" onClick={saved.reload}>
+                  Retry saved status
+                </Button>
+              </Alert>
             )}
 
-            {loading ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <Skeleton variant="card" />
-                <Skeleton variant="card" />
-                <Skeleton variant="card" />
-                <Skeleton variant="card" />
-              </div>
-            ) : error ? (
-              <ErrorState
-                title="We couldn’t load the scholarships"
-                message={error.message}
-                onRetry={reload}
-              />
-            ) : items.length === 0 ? (
-              activeCount > 0 || search ? (
-                <EmptyState
-                  title="No scholarships match these filters"
-                  description="Try removing a filter or searching for a different provider."
-                  action={
-                    <Button
-                      variant="secondary"
-                      onClick={() => {
-                        setFilters(EMPTY_FILTERS);
-                        setSearch('');
-                      }}
-                    >
-                      Clear filters
-                    </Button>
-                  }
-                />
-              ) : (
-                <EmptyState
-                  title="No scholarships listed yet"
-                  description="Records are added by an administrator and refreshed by the weekly crawler. Nothing has been published yet — check back soon."
-                />
-              )
-            ) : (
-              <>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {items.map((s) => (
+            {/* --- recommended for you -------------------------------- */}
+            {isAuthenticated && recommended.length > 0 && (
+              <section className="mt-6">
+                <div className="scholarship-section-heading">
+                  <span aria-hidden="true">01</span>
+                  <h2>Recommended for you</h2>
+                </div>
+                <p className="scholarship-results-note">
+                  Matches among the loaded opportunities. Confirm eligibility in View details.
+                </p>
+                <div className="scholarship-card-grid">
+                  {recommended.map(({ s, m }) => (
                     <ScholarshipCard
-                      key={s.id}
+                      key={`rec-${s.id}`}
                       scholarship={s}
-                      match={byId(s.id)}
-                      authenticated={isAuthenticated && !matching}
+                      match={m}
+                      authenticated
                       saved={saved.isSaved('scholarship', s.id)}
-                      onToggleSave={() => saved.toggle('scholarship', s.id)}
+                      onToggleSave={() => toggleSave(s.id)}
+                      saveDisabled={saved.loading || Boolean(saved.error) || Boolean(savingId)}
                     />
                   ))}
                 </div>
-                {hasMore && (
-                  <div className="mt-6 flex justify-center">
-                    <Button variant="secondary" onClick={loadMore} loading={loadingMore}>
-                      Load more opportunities
-                    </Button>
-                  </div>
-                )}
-              </>
+              </section>
             )}
-          </section>
+
+            {!isAuthenticated && !loading && items.length > 0 && (
+              <Alert variant="info" className="mt-6">
+                <strong>Check requirements against your profile.</strong>{' '}
+                <Link to="/login" className="underline">
+                  Sign in
+                </Link>{' '}
+                or{' '}
+                <Link to="/register" className="underline">
+                  create an account
+                </Link>
+                .
+              </Alert>
+            )}
+
+            {/* --- all scholarships ------------------------------------ */}
+            <section className="mt-6">
+              <div className="scholarship-section-heading">
+                <span aria-hidden="true">{recommended.length ? '02' : '01'}</span>
+                <h2>All scholarships</h2>
+              </div>
+
+              {loading ? (
+                <div className="scholarship-card-grid">
+                  <Skeleton variant="card" />
+                  <Skeleton variant="card" />
+                  <Skeleton variant="card" />
+                  <Skeleton variant="card" />
+                </div>
+              ) : error ? (
+                <ErrorState
+                  title="We couldn’t load the scholarships"
+                  message={error.message}
+                  onRetry={reload}
+                />
+              ) : items.length === 0 ? (
+                activeCount > 0 || search ? (
+                  <EmptyState
+                    title="No scholarships match these filters"
+                    description="Try removing a filter or searching for a different provider."
+                    action={
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setFilters(EMPTY_FILTERS);
+                          setSearch('');
+                        }}
+                      >
+                        Clear filters
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <EmptyState
+                    title="No scholarships listed yet"
+                    description="New opportunities will appear here when published. Check back soon."
+                  />
+                )
+              ) : (
+                <>
+                  <div className="scholarship-card-grid">
+                    {items.map((s) => (
+                      <ScholarshipCard
+                        key={s.id}
+                        scholarship={s}
+                        match={byId(s.id)}
+                        authenticated={isAuthenticated}
+                        saved={saved.isSaved('scholarship', s.id)}
+                        onToggleSave={() => toggleSave(s.id)}
+                        saveDisabled={saved.loading || Boolean(saved.error) || Boolean(savingId)}
+                      />
+                    ))}
+                  </div>
+                  {hasMore && (
+                    <div className="mt-6 flex justify-center">
+                      <Button variant="secondary" onClick={loadMore} loading={loadingMore}>
+                        Load more opportunities
+                      </Button>
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+          </div>
         </div>
-      </div>
       </div>
 
       {/* --- mobile filter sheet ------------------------------------- */}
       {sheetOpen && (
         <div
-          className="fixed inset-0 z-40 bg-surface p-4 lg:hidden"
+          className="scholarship-filter-sheet"
+          ref={sheetRef}
+          onKeyDown={handleSheetKeys}
           role="dialog"
           aria-modal="true"
           aria-label="Filters"
         >
           <div className="mx-auto flex h-full max-w-md flex-col">
+            <div className="scholarship-sheet-heading">
+              <span className="scholarship-small-label">Choose your route</span>
+              <Button
+                ref={closeRef}
+                variant="secondary"
+                onClick={() => setSheetOpen(false)}
+                aria-label="Close filters"
+              >
+                Close ×
+              </Button>
+            </div>
             <div className="flex-1 overflow-y-auto">
-              <Card>{filterPanel}</Card>
+              <div className="scholarship-filter-board">{filterPanel}</div>
             </div>
             <div className="mt-4 flex gap-2">
               <Button

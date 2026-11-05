@@ -97,7 +97,7 @@ export function RiasecAssessment() {
 
   if (submitting) {
     return (
-      <div className="flex min-h-[50vh] flex-col items-center justify-center gap-4">
+      <div className="rail-assessment flex min-h-[50vh] flex-col items-center justify-center gap-4">
         <Spinner size="lg" label="Working out your profile" />
         <p className="text-body text-ink-700">Working out your profile…</p>
       </div>
@@ -107,14 +107,14 @@ export function RiasecAssessment() {
   // ---------------------------------------------------------------- intro
   if (stage === 'intro') {
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className="rail-assessment">
         <PageHeader
+          className="rail-assessment-heading"
           title="Interest assessment"
           back={{ to: '/find-your-path', label: 'Find your path' }}
         />
-        <Card variant="soft" className="relative overflow-hidden p-6 md:p-8">
-          <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-lime/60" aria-hidden="true" />
-          <p className="text-caption font-semibold text-pine-700">BEFORE YOU START</p>
+        <Card className="rail-assessment-intro">
+          <p className="rail-assessment-eyebrow">BEFORE YOU START</p>
           <h2 className="mt-2 text-h2 font-serif">There are no right or wrong answers.</h2>
           <div className="flex flex-col gap-3 text-body text-ink-900">
             <p className="mt-4">
@@ -125,7 +125,11 @@ export function RiasecAssessment() {
               Takes about 8 minutes. You&rsquo;ll need to answer all {total} before you can see
               results.
             </p>
-            <Button size="lg" className="mt-2 w-fit" onClick={() => setStage('questions')}>
+            <Button
+              size="lg"
+              className="rail-assessment-primary mt-2 w-fit"
+              onClick={() => setStage('questions')}
+            >
               Start assessment
             </Button>
           </div>
@@ -137,8 +141,9 @@ export function RiasecAssessment() {
   // ---------------------------------------------------------------- review
   if (stage === 'review') {
     return (
-      <div className="mx-auto max-w-2xl">
+      <div className="rail-assessment">
         <PageHeader
+          className="rail-assessment-heading"
           title="Nearly there"
           back={{ to: '/find-your-path', label: 'Find your path' }}
         />
@@ -151,16 +156,20 @@ export function RiasecAssessment() {
         )}
 
         {unanswered.length === 0 ? (
-          <Card>
+          <Card className="rail-assessment-summary">
             <p className="text-body text-ink-900">
               All {total} questions answered. Ready when you are.
             </p>
-            <Button size="lg" className="mt-4" onClick={submit}>
+            <Button size="lg" className="rail-assessment-primary mt-4" onClick={submit}>
               See my results
             </Button>
           </Card>
         ) : (
-          <Card variant="titled" title={`${unanswered.length} still to answer`}>
+          <Card
+            className="rail-assessment-summary"
+            variant="titled"
+            title={`${unanswered.length} still to answer`}
+          >
             <p className="text-body-sm text-ink-700">
               You can&rsquo;t see results until every question is answered. Jump to any of these:
             </p>
@@ -187,7 +196,11 @@ export function RiasecAssessment() {
         )}
 
         <div className="mt-4">
-          <Button variant="secondary" onClick={() => setStage('questions')}>
+          <Button
+            className="rail-assessment-secondary"
+            variant="secondary"
+            onClick={() => setStage('questions')}
+          >
             Back to questions
           </Button>
         </div>
@@ -198,13 +211,16 @@ export function RiasecAssessment() {
   // ---------------------------------------------------------------- questions
   const question = questions[index];
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="rail-assessment">
+      <p className="rail-assessment-eyebrow rail-assessment-station">
+        NEXUS CENTRAL / FIND YOUR PATH
+      </p>
       <PageHeader
+        className="rail-assessment-heading"
         title="Interest assessment"
+        description="A little curiosity goes a long way. Explore the activities that interest you."
         back={{ to: '/find-your-path', label: 'Find your path' }}
       />
-      <AssessmentProgress answered={answeredCount} total={total} />
-
       <QuestionCard
         question={question}
         labels={labels}
@@ -215,19 +231,30 @@ export function RiasecAssessment() {
         highlight={highlightUnanswered && answers[question.id] === undefined}
       />
 
-      <div className="mt-6 flex items-center justify-between">
-        <Button
-          variant="secondary"
-          onClick={() => setIndex((i) => Math.max(0, i - 1))}
-          disabled={index === 0}
-        >
-          Back
-        </Button>
-        {index < total - 1 ? (
-          <Button onClick={() => setIndex((i) => Math.min(total - 1, i + 1))}>Next</Button>
-        ) : (
-          <Button onClick={() => setStage('review')}>Review answers</Button>
-        )}
+      <div className="rail-assessment-controls">
+        <AssessmentProgress answered={answeredCount} total={total} />
+        <div className="rail-assessment-actions">
+          <Button
+            className="rail-assessment-secondary"
+            variant="secondary"
+            onClick={() => setIndex((i) => Math.max(0, i - 1))}
+            disabled={index === 0}
+          >
+            Back
+          </Button>
+          {index < total - 1 ? (
+            <Button
+              className="rail-assessment-primary"
+              onClick={() => setIndex((i) => Math.min(total - 1, i + 1))}
+            >
+              Next
+            </Button>
+          ) : (
+            <Button className="rail-assessment-primary" onClick={() => setStage('review')}>
+              Review answers
+            </Button>
+          )}
+        </div>
       </div>
     </div>
   );

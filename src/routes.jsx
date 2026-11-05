@@ -18,6 +18,7 @@ import ResetPassword from '@/pages/public/ResetPassword';
 import Privacy from '@/pages/public/Privacy';
 import ScholarshipList from '@/pages/public/ScholarshipList';
 import ScholarshipDetail from '@/pages/public/ScholarshipDetail';
+import CourseList from '@/pages/public/CourseList';
 import NotFound from '@/pages/public/NotFound';
 
 import Dashboard from '@/pages/student/Dashboard';
@@ -57,6 +58,8 @@ export function AppRoutes() {
         <Route path="privacy" element={<Privacy />} />
         <Route path="scholarships" element={<ScholarshipList />} />
         <Route path="scholarships/:id" element={<ScholarshipDetail />} />
+        <Route path="courses" element={<CourseList />} />
+        <Route path="courses/:id" element={<CourseDetail />} />
 
         <Route
           path="login"
@@ -151,14 +154,6 @@ export function AppRoutes() {
           element={
             <ProfileGate>
               <CareerDetail />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="courses/:id"
-          element={
-            <ProfileGate>
-              <CourseDetail />
             </ProfileGate>
           }
         />
