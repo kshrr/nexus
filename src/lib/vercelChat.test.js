@@ -108,6 +108,16 @@ describe('/api/chat', () => {
     });
   });
 
+  it('imports its TypeScript files with .js specifiers, which Vercel can load', async () => {
+    const { readFileSync } = await import('node:fs');
+    for (const file of ['api/chat.ts', 'supabase/functions/chat/system-prompt.ts']) {
+      const source = readFileSync(file, 'utf8');
+      const relative = [...source.matchAll(/from '(\.{1,2}\/[^']+)'/g)].map((m) => m[1]);
+      expect(relative.length).toBeGreaterThan(0);
+      for (const specifier of relative) expect(specifier, `${file}: ${specifier}`).toMatch(/\.js$/);
+    }
+  });
+
   it('includes the upstream status in the operator detail', async () => {
     const body = await upstreamFailure(500, 'gemini-3.6-flash').json();
     expect(body.error.code).toBe('AI_UNAVAILABLE');

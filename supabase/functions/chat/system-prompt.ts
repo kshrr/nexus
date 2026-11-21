@@ -13,7 +13,7 @@
  * The thesis must say so honestly — claiming prompt injection is "solved" would
  * be wrong, and an examiner may know it.
  */
-import { renderContextBlock, type ChatTurn, type StudentContext } from '../_shared/chat-context.ts';
+import { renderContextBlock, type ChatTurn, type StudentContext } from '../_shared/chat-context.js';
 
 export function buildSystemPrompt(context: StudentContext): string {
   return `You are the Nexus advisor, helping Malaysian students with education and career decisions. Answer in the language of the student's message (English or Bahasa Malaysia only).
