@@ -11,8 +11,8 @@ import '@/styles/rail-dashboard.css';
  *  - all widths: shared site header/footer, without a sidebar
  *  - mobile retains the bottom tab bar
  *
- * The chat launcher overlay (ui-spec §8) is mounted here so it is available on
- * every authenticated page and nowhere else.
+ * The chat launcher overlay (ui-spec §8) is mounted here and in PublicLayout,
+ * so it is available on every student and public page (not admin or sign-in).
  */
 export function AppShell() {
   const { pathname } = useLocation();

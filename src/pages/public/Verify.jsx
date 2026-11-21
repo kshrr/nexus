@@ -105,8 +105,8 @@ export function Verify() {
       title="Check your email"
       subtitle={
         registrationEmail
-          ? `We sent a verification email to ${registrationEmail}. Use the confirmation link, or enter the 6-digit code below if your email includes one.`
-          : 'Use the confirmation link in your email, or enter your registration email and 6-digit code below.'
+          ? `We sent a 6-digit code to ${registrationEmail}. Enter it below, or use the confirmation link in the same email.`
+          : 'Enter your registration email and the 6-digit code we sent you, or use the confirmation link in that email.'
       }
       footer={
         <Link to="/login" className="text-pine-700 underline">

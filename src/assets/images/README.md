@@ -1,9 +1,9 @@
-﻿# Landing photograph
+﻿# Landing images
 
-`nexus-campus.jpg` is downloaded from Unsplash and bundled locally, so the landing page does not depend on a third-party image request at runtime.
+`nexus-students-hero.webp` is the landing-page hero image used by
+`src/components/landing/LandingOpening.jsx`. It is bundled locally, so the landing page does not
+depend on a third-party image request at runtime.
 
-Source: https://images.unsplash.com/photo-1523240795612-9a054b0db644
+Source and licence: not yet recorded. Add them here before publishing the portfolio copy.
 
-License: https://unsplash.com/license
-
-The green treatment is applied in the landing-page CSS; the source photograph is preserved.
+The earlier Unsplash photograph (`nexus-campus.jpg`) is no longer used and has been removed.

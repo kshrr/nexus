@@ -1,12 +1,14 @@
 import { fileURLToPath, URL } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { devApiChat } from './scripts/devApiChat.js';
 
 // https://vitejs.dev/config/
 // Only `VITE_`-prefixed env vars are exposed to client code (Vite default).
 // Do not widen `envPrefix` — server secrets must never reach the bundle.
+// devApiChat serves /api/chat during `npm run dev` only (Vercel serves it in production).
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), devApiChat()],
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

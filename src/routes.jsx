@@ -46,8 +46,6 @@ import AdminAudit from '@/pages/admin/AdminAudit';
  * Route table (architecture.md §6.1, ui-spec §1.1).
  *
  * Guards are UX only — every route is also protected by RLS in the database.
- * Feature routes that belong to later phases render <Placeholder>, so navigation
- * is complete and honest without faking functionality.
  */
 export function AppRoutes() {
   return (
@@ -60,6 +58,8 @@ export function AppRoutes() {
         <Route path="scholarships/:id" element={<ScholarshipDetail />} />
         <Route path="courses" element={<CourseList />} />
         <Route path="courses/:id" element={<CourseDetail />} />
+        <Route path="careers" element={<Careers />} />
+        <Route path="careers/:id" element={<CareerDetail />} />
 
         <Route
           path="login"
@@ -138,22 +138,6 @@ export function AppRoutes() {
           element={
             <ProfileGate>
               <Recommendations />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="careers"
-          element={
-            <ProfileGate>
-              <Careers />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="careers/:id"
-          element={
-            <ProfileGate>
-              <CareerDetail />
             </ProfileGate>
           }
         />

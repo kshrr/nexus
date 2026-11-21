@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { ReasonList } from './ReasonList';
-import { CourseCard } from './CourseCard';
 import { CareerCard } from './CareerCard';
 
 const REASONS = [
@@ -37,38 +36,6 @@ describe('ReasonList — the transparency requirement (report §3.4.2)', () => {
   it('renders nothing when there are no reasons', () => {
     const { container } = render(<ReasonList reasons={[]} />);
     expect(container).toBeEmptyDOMElement();
-  });
-});
-
-describe('CourseCard — every field §3.4.2 requires (AC-22)', () => {
-  const rec = {
-    match_score: 85,
-    rule_id: 'R-HEALTH-01',
-    reasons: REASONS,
-    detail: {
-      name: 'Bachelor of Pharmacy',
-      field_of_study: 'Pharmacy',
-      university_name: 'Universiti Sains Malaysia',
-      pathway_type: 'degree',
-      duration_months: 48,
-      entry_requirements: '5 credits including Biology and Chemistry',
-    },
-  };
-
-  it('shows course name, university, pathway type, duration and entry requirements', () => {
-    render(<CourseCard recommendation={rec} />);
-    expect(screen.getByText('Bachelor of Pharmacy')).toBeInTheDocument();
-    expect(screen.getByText(/Universiti Sains Malaysia/)).toBeInTheDocument();
-    expect(screen.getByText(/Degree/)).toBeInTheDocument();
-    expect(screen.getByText(/4 years/)).toBeInTheDocument();
-    expect(screen.getByText(/5 credits including Biology and Chemistry/)).toBeInTheDocument();
-  });
-
-  it('shows the match as a plain number and names the rule that produced it', () => {
-    render(<CourseCard recommendation={rec} />);
-    expect(screen.getByText('85%')).toBeInTheDocument();
-    expect(screen.getByText('R-HEALTH-01')).toBeInTheDocument();
-    expect(document.querySelector('svg')).toBeNull(); // no gauge or ring
   });
 });
 

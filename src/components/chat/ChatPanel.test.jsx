@@ -4,6 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
 const h = vi.hoisted(() => ({
+  auth: {
+    profile: { full_name: 'Kauthar binti Mohd Suhair' },
+    isAuthenticated: true,
+  },
   chat: {
     messages: [],
     loadingHistory: false,
@@ -30,10 +34,11 @@ vi.mock('@/hooks/useChat', () => ({
   useChatContextSummary: () => ({ summary: h.summary, loading: false }),
 }));
 vi.mock('@/context/useAuth', () => ({
-  useAuth: () => ({ profile: { full_name: 'Kauthar binti Mohd Suhair' }, isAuthenticated: true }),
+  useAuth: () => h.auth,
 }));
 
-import { ChatPanel } from './ChatPanel';
+import { ChatPanel, SIGN_IN_REPLY } from './ChatPanel';
+import { GUEST_FAQ } from '@/lib/chatGuestFaq';
 import { MessageBubble } from './MessageList';
 
 const open = () =>
@@ -45,6 +50,8 @@ const open = () =>
 
 beforeEach(() => {
   vi.clearAllMocks();
+  h.auth = { profile: { full_name: 'Kauthar binti Mohd Suhair' }, isAuthenticated: true };
+  sessionStorage.clear();
   Object.assign(h.chat, {
     messages: [],
     loadingHistory: false,
@@ -156,6 +163,95 @@ describe('ChatPanel — error states (§12.5, verbatim)', () => {
     expect(
       screen.getByText("You've reached the message limit for now. Try again in an hour.")
     ).toBeInTheDocument();
+  });
+});
+
+describe('ChatPanel — visitors who are not signed in', () => {
+  beforeEach(() => {
+    h.auth = { profile: null, isAuthenticated: false };
+  });
+
+  it('opens with questions about Nexus and no personal context', () => {
+    open();
+    expect(screen.getByText(/tell you about Nexus and how to use it/i)).toBeInTheDocument();
+    expect(screen.getByText('Questions about Nexus:')).toBeInTheDocument();
+    for (const { question } of GUEST_FAQ) {
+      expect(screen.getByRole('button', { name: question })).toBeInTheDocument();
+    }
+    expect(screen.queryByRole('button', { name: /what i know about you/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /my ISA code/i })).not.toBeInTheDocument();
+  });
+
+  it('answers a question about Nexus straight away, without the assistant or sign-in', async () => {
+    const user = userEvent.setup();
+    open();
+    await user.click(screen.getByRole('button', { name: 'How does Find Your Path work?' }));
+
+    expect(h.chat.send).not.toHaveBeenCalled();
+    expect(screen.getByText('How does Find Your Path work?')).toBeInTheDocument();
+    expect(screen.getByText(/36-question interest assessment/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Sign in' })).not.toBeInTheDocument();
+    expect(sessionStorage.getItem('nexus.chat.pendingQuestion')).toBeNull();
+    // The asked question leaves the list; the rest stay available.
+    expect(
+      screen.queryByRole('button', { name: 'How does Find Your Path work?' })
+    ).not.toBeInTheDocument();
+    expect(screen.getByText('More about Nexus:')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'What is Nexus?' })).toBeInTheDocument();
+  });
+
+  it('keeps earlier answers when the visitor asks another question', async () => {
+    const user = userEvent.setup();
+    open();
+    await user.click(screen.getByRole('button', { name: 'What is Nexus?' }));
+    await user.click(screen.getByRole('button', { name: 'What is a Holland Code?' }));
+    expect(screen.getByText(/plan what comes after school/)).toBeInTheDocument();
+    expect(screen.getByText(/based on six types/)).toBeInTheDocument();
+  });
+
+  it('asks the visitor to sign in before answering their own typed question', async () => {
+    const user = userEvent.setup();
+    open();
+    await user.type(screen.getByLabelText(/ask a question/i), 'Which course suits me?');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+
+    expect(h.chat.send).not.toHaveBeenCalled();
+    expect(screen.getByText('Which course suits me?')).toBeInTheDocument();
+    expect(screen.getByText(SIGN_IN_REPLY)).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Sign in' })).toHaveAttribute('href', '/login');
+    expect(screen.getByRole('link', { name: 'Create account' })).toHaveAttribute(
+      'href',
+      '/register'
+    );
+    expect(sessionStorage.getItem('nexus.chat.pendingQuestion')).toBe('Which course suits me?');
+  });
+
+  it('hides the sign-in buttons again once the visitor taps a question about Nexus', async () => {
+    const user = userEvent.setup();
+    open();
+    await user.type(screen.getByLabelText(/ask a question/i), 'Which course suits me?');
+    await user.click(screen.getByRole('button', { name: /send/i }));
+    expect(screen.getByRole('link', { name: 'Sign in' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'What is Nexus?' }));
+    expect(screen.queryByRole('link', { name: 'Sign in' })).not.toBeInTheDocument();
+  });
+});
+
+describe('Visitor answers about Nexus', () => {
+  it('has a distinct, non-empty answer for every question', () => {
+    const questions = GUEST_FAQ.map((f) => f.question);
+    expect(new Set(questions).size).toBe(questions.length);
+    for (const { answer } of GUEST_FAQ) expect(answer.trim().length).toBeGreaterThan(40);
+  });
+});
+
+describe('ChatPanel — after signing in', () => {
+  it('puts the question asked before sign-in back in the composer, unsent', () => {
+    sessionStorage.setItem('nexus.chat.pendingQuestion', 'Which course suits me?');
+    open();
+    expect(screen.getByLabelText(/ask a question/i)).toHaveValue('Which course suits me?');
+    expect(h.chat.send).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem('nexus.chat.pendingQuestion')).toBeNull();
   });
 });
 

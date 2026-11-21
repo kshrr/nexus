@@ -8,15 +8,25 @@ import { buildSuggestions } from '@/lib/chatSuggestions';
  * usefully answer — explaining a Holland Code or a pathway difference — rather
  * than the factual lookups it must refuse (§12.3).
  *
- * @param {{ summary: any, onSelect: (q: string) => void, disabled?: boolean }} props
+ * `questions` overrides the generated list (used for visitors' questions about
+ * Nexus, which are not capped).
+ *
+ * @param {{ summary?: any, questions?: string[], label?: string,
+ *   onSelect: (q: string) => void, disabled?: boolean }} props
  */
-export function SuggestedQuestions({ summary, onSelect, disabled }) {
-  const suggestions = buildSuggestions(summary);
+export function SuggestedQuestions({
+  summary,
+  questions,
+  label = 'Try asking:',
+  onSelect,
+  disabled,
+}) {
+  const suggestions = questions ?? buildSuggestions(summary);
   if (!suggestions.length) return null;
 
   return (
     <div>
-      <p className="mb-2 text-caption text-ink-500">Try asking:</p>
+      <p className="mb-2 text-caption text-ink-500">{label}</p>
       <div className="flex flex-col gap-2">
         {suggestions.map((q) => (
           <button

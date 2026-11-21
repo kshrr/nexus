@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Landing } from './Landing';
 
 const catalogue = vi.hoisted(() => ({ result: null }));
+let observedSections = [];
 vi.mock('@/config/env', () => ({ config: { isConfigured: true } }));
 vi.mock('@/lib/supabase', () => ({
   supabase: {
@@ -14,6 +15,7 @@ vi.mock('@/lib/supabase', () => ({
 }));
 
 beforeEach(() => {
+  observedSections = [];
   catalogue.result = {
     data: [
       { id: 'upm', name: 'Universiti Putra Malaysia', type: 'public', state: 'Selangor' },
@@ -25,11 +27,52 @@ beforeEach(() => {
   vi.stubGlobal(
     'IntersectionObserver',
     class {
-      observe() {}
+      constructor(callback) {
+        this.callback = callback;
+        this.targets = [];
+        observedSections.push(this);
+      }
+      observe(target) {
+        this.targets.push(target);
+      }
       unobserve() {}
       disconnect() {}
     }
   );
+});
+
+describe('Landing opening journey', () => {
+  it('introduces students and their common decisions before the feature showcase', async () => {
+    showLanding();
+    expect(
+      screen.getByRole('img', { name: /students exploring their futures/i })
+    ).toBeInTheDocument();
+    const challenges = screen.getByRole('region', { name: /so many choices/i });
+    expect(within(challenges).getByText(/which path fits me/i)).toBeInTheDocument();
+    expect(within(challenges).getByText(/where can i study/i)).toBeInTheDocument();
+    expect(within(challenges).getByText(/how can i afford it/i)).toBeInTheDocument();
+    await screen.findByText('Universiti Putra Malaysia');
+  });
+
+  it('updates the laptop preview as the next feature enters the reading area', async () => {
+    showLanding();
+    const journey = screen.getByRole('region', { name: /explore nexus features/i });
+    const preview = within(journey).getByRole('region', { name: /nexus feature preview/i });
+    expect(within(preview).getByText(/discover what drives you/i)).toBeInTheDocument();
+
+    const academics = within(journey)
+      .getByRole('heading', { name: /connect your strengths/i })
+      .closest('article');
+    const observer = observedSections.find((item) => item.targets.includes(academics));
+    expect(observer).toBeDefined();
+    act(() =>
+      observer.callback([{ target: academics, isIntersecting: true, intersectionRatio: 1 }])
+    );
+
+    expect(within(preview).getByText(/see your academic picture/i)).toBeInTheDocument();
+    expect(within(preview).queryByText(/discover what drives you/i)).not.toBeInTheDocument();
+    await screen.findByText('Universiti Putra Malaysia');
+  });
 });
 
 function showLanding() {

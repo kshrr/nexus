@@ -80,7 +80,7 @@ export function Recommendations() {
               loading={downloading}
               onClick={downloadSummary}
             >
-              Download counselor summary
+              Download summary
             </Button>
             <Button variant="secondary" onClick={regenerateConnections} loading={generating}>
               {hasResults ? 'Regenerate' : 'Generate'}
@@ -143,7 +143,7 @@ export function Recommendations() {
         secondaryCareers,
         courses,
         generatedAt,
-      }).save('nexus-counselor-summary.pdf');
+      }).save('nexus-recommendations-summary.pdf');
     } catch {
       setDownloadError(true);
     } finally {

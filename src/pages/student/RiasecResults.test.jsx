@@ -154,7 +154,7 @@ it.each([
   ];
   show();
   const image = screen.getByRole('button', { name: new RegExp(name, 'i') }).querySelector('img');
-  expect(image).toHaveAttribute('src', expect.stringContaining(`/riasec/${file}.png`));
+  expect(image).toHaveAttribute('src', expect.stringContaining(`/riasec/${file}.webp`));
   expect(image).toHaveAttribute('alt', '');
 });
 

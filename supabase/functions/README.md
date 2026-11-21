@@ -16,22 +16,20 @@ recommend/
 match-scholarship/
   index.ts       POST -> eligibility checklists + scores (read-only)
 chat/
-  index.ts               POST -> text/event-stream from Gemini
-  system-prompt.ts       the §12.3 hardened prompt
+  system-prompt.ts       the §12.3 hardened prompt (used by api/chat.ts on Vercel)
 _shared/scholarship.ts   PURE eligibility evaluation   (unit-tested, 39 cases)
 _shared/chat-context.ts  PURE context allowlist + output filter (49 cases)
 ```
 
 ## The Gemini key
 
-It exists in exactly one place: `Deno.env` inside `fn:chat`. Set it once —
-
-```bash
-npx supabase secrets set GEMINI_API_KEY=your-key
-npx supabase secrets set GEMINI_MODEL=gemini-3.6-flash   # optional
-```
-
-— and never anywhere else.
+Chat runs as the Vercel function `api/chat.ts`, not as a Supabase Edge Function
+(the earlier `chat/index.ts` Edge Function has been removed). The key exists in
+exactly one place: the Vercel server environment. Set `GEMINI_API_KEY` (and
+optionally `GEMINI_MODEL` / `GEMINI_FALLBACK_MODEL`) in Vercel Project Settings →
+Environment Variables, never with a `VITE_` prefix, and never anywhere else.
+If an old `chat` function is still deployed on the hosted Supabase project, it is
+unused and can be deleted there.
 
 `npm run check:secrets` is the automated form of AC-34 / NFR01c. It works in two
 layers because each has a different blind spot:
@@ -42,13 +40,13 @@ layers because each has a different blind spot:
   covered, and `src/lib/secretScan.test.js` proves each rule actually fires.
 * **literal** matching compares against the real value, so no format can slip
   past — but it only runs where the value is readable (a local `.env` or a CI
-  variable). Here the key lives in the Edge runtime, so this layer is inert
+  variable). Here the key lives in the Vercel server environment, so this layer is inert
   locally and would engage in CI.
 
 Neither layer is exhaustive on its own. Say so in the thesis rather than
 claiming the scan is complete.
 
-The browser never contacts Gemini. React → `fn:chat` → Gemini → stream → React.
+The browser never contacts Gemini. React → `/api/chat` (Vercel) → Gemini → stream → React.
 
 ## Why the logic is split out
 
@@ -218,8 +216,8 @@ eligibility, so the exact scale does not affect the primary ordering.
 ### 12. Rate limiting cannot use the caller's JWT directly *(resolved in SQL)*
 
 §4.8 puts `rate_limit_events` beyond the browser entirely — RLS on, zero
-policies, grants revoked. §12.1 / FR-SEC-05 simultaneously require `fn:chat` to
-query as the calling user. Together those make the counter unwritable by the
+policies, grants revoked. §12.1 / FR-SEC-05 simultaneously require the chat
+function (now `api/chat.ts`) to query as the calling user. Together those make the counter unwritable by the
 function.
 
 **Implemented:** `public.consume_rate_limit()` (migration 0011), a SECURITY

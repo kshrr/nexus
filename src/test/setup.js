@@ -13,7 +13,7 @@ if (!Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = () => {};
 }
 
-// jsdom lacks matchMedia — used by useMediaQuery.
+// jsdom lacks matchMedia — used by motion's reduced-motion detection.
 if (!window.matchMedia) {
   window.matchMedia = (query) => ({
     matches: false,

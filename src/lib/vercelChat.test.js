@@ -5,7 +5,7 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: () => ({ auth: { getUser: auth.getUser } }),
 }));
 
-import chat, { upstreamFailure } from '../../api/chat.ts';
+import chat, { fetchGeminiWithRetry, upstreamFailure } from '../../api/chat.ts';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -55,6 +55,63 @@ describe('/api/chat', () => {
     );
     expect(auth.getUser).toHaveBeenCalledWith('test.jwt.token');
     expect(response.status).toBe(401);
+  });
+
+  describe('slow or missing Gemini models', () => {
+    const sseOk = () =>
+      new Response('data: {"candidates":[]}\n\n', {
+        status: 200,
+        headers: { 'Content-Type': 'text/event-stream' },
+      });
+    /** A fetch that never answers until it is aborted, like a stalled model. */
+    const hangs = (_url, init) =>
+      new Promise((_, reject) => {
+        init.signal.addEventListener('abort', () =>
+          reject(Object.assign(new Error('aborted'), { name: 'AbortError' }))
+        );
+      });
+
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('moves to the fallback model when the main model does not start in time', async () => {
+      vi.stubEnv('GEMINI_API_KEY', 'test-key');
+      const fetchMock = vi.fn().mockImplementationOnce(hangs).mockResolvedValueOnce(sseOk());
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = await fetchGeminiWithRetry('{}', { startTimeoutMs: 20 });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock.mock.calls[0][0]).toContain('/models/gemini-3.6-flash:');
+      expect(fetchMock.mock.calls[1][0]).toContain('/models/gemini-3.5-flash-lite:');
+      expect(result.model).toBe('gemini-3.5-flash-lite');
+      expect(result.response.ok).toBe(true);
+    });
+
+    it('moves to the fallback model when the main model name is not found', async () => {
+      vi.stubEnv('GEMINI_API_KEY', 'test-key');
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce(new Response('{}', { status: 404 }))
+        .mockResolvedValueOnce(sseOk());
+      vi.stubGlobal('fetch', fetchMock);
+
+      const result = await fetchGeminiWithRetry('{}', { startTimeoutMs: 1000 });
+
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(result.model).toBe('gemini-3.5-flash-lite');
+    });
+
+    it('gives up when the fallback model also stalls', async () => {
+      vi.stubEnv('GEMINI_API_KEY', 'test-key');
+      vi.stubGlobal('fetch', vi.fn().mockImplementation(hangs));
+      await expect(fetchGeminiWithRetry('{}', { startTimeoutMs: 20 })).rejects.toThrow();
+    });
+  });
+
+  it('includes the upstream status in the operator detail', async () => {
+    const body = await upstreamFailure(500, 'gemini-3.6-flash').json();
+    expect(body.error.code).toBe('AI_UNAVAILABLE');
+    expect(body.error.detail).toBe('Gemini responded 500 for model gemini-3.6-flash');
   });
 
   it('shows a friendly message when Gemini returns 429', async () => {

@@ -91,7 +91,9 @@ export default { async fetch(req: Request) {
       return fail(429, 'RATE_LIMITED', MSG_RATE_LIMITED);
     }
 
-    if (!process.env.GEMINI_API_KEY) return fail(503, 'AI_UNAVAILABLE', MSG_UNAVAILABLE);
+    if (!process.env.GEMINI_API_KEY) {
+      return fail(503, 'AI_UNAVAILABLE', MSG_UNAVAILABLE, 'GEMINI_API_KEY is not configured');
+    }
 
     // ---- 4. bounded context, caller-scoped (§12.2) -----------------------
     const [profileRes, riasecRes, recsRes, strengthsRes, historyRes, savedRes] = await Promise.all([
@@ -189,12 +191,17 @@ export default { async fetch(req: Request) {
       upstreamModel = result.model;
     } catch {
       console.error('[chat] Gemini request failed');
-      return fail(503, 'AI_UNAVAILABLE', MSG_UNAVAILABLE);
+      return fail(
+        503,
+        'AI_UNAVAILABLE',
+        MSG_UNAVAILABLE,
+        'Gemini did not respond in time or could not be reached'
+      );
     }
 
     if (!upstream.ok || !upstream.body) {
       console.error('[chat] Gemini response status', upstream.status);
-      return upstreamFailure(upstream.status);
+      return upstreamFailure(upstream.status, upstreamModel);
     }
 
     // ---- 7. stream, filter, persist -------------------------------------
@@ -229,7 +236,7 @@ export default { async fetch(req: Request) {
 
         try {
           for (;;) {
-            const { done, value } = await reader.read();
+            const { done, value } = await readWithIdleTimeout(reader, GEMINI_IDLE_TIMEOUT_MS);
             if (done) break;
             buffer += decoder.decode(value, { stream: true });
 
@@ -275,6 +282,7 @@ export default { async fetch(req: Request) {
           // Stream interrupted (§12.5): the client keeps the partial text and
           // offers a retry, so this is reported rather than thrown away.
           console.error('[chat] stream interrupted');
+          reader.cancel().catch(() => {});
           send({ error: { code: 'STREAM_INTERRUPTED', message: MSG_UNAVAILABLE } });
         } finally {
           controller.close();
@@ -296,13 +304,51 @@ export default { async fetch(req: Request) {
   }
 } };
 
-export function upstreamFailure(status: number): Response {
+export function upstreamFailure(status: number, model?: string): Response {
   if (status === 429) return fail(429, 'RATE_LIMITED', MSG_RATE_LIMITED);
-  return fail(503, 'AI_UNAVAILABLE', MSG_UNAVAILABLE);
+  // `detail` is operator-facing (shown only in development builds); it carries
+  // the upstream status and model, never a key or the request content.
+  return fail(
+    503,
+    'AI_UNAVAILABLE',
+    MSG_UNAVAILABLE,
+    model ? `Gemini responded ${status} for model ${model}` : `Gemini responded ${status}`
+  );
 }
 
-async function fetchGeminiWithRetry(
-  body: string
+/**
+ * Gemini's response time varies widely: the same model can answer in 1 s or
+ * stall for over a minute. If a model has not started answering within this
+ * time, the request moves on to the fallback model instead of leaving the
+ * student waiting.
+ */
+export const GEMINI_START_TIMEOUT_MS = 15_000;
+/** A reply that stops arriving for this long is ended as interrupted. */
+export const GEMINI_IDLE_TIMEOUT_MS = 30_000;
+
+class GeminiStartTimeout extends Error {}
+
+/** Reads the next chunk, or rejects if nothing arrives within `ms`. */
+async function readWithIdleTimeout(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  ms: number
+): Promise<ReadableStreamReadResult<Uint8Array>> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      reader.read(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error('Gemini stream stalled')), ms);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function fetchGeminiWithRetry(
+  body: string,
+  { startTimeoutMs = GEMINI_START_TIMEOUT_MS }: { startTimeoutMs?: number } = {}
 ): Promise<{ response: Response; model: string }> {
   const models = [...new Set([GEMINI_MODEL, GEMINI_FALLBACK_MODEL])];
   const attemptsPerModel = 2;
@@ -314,20 +360,38 @@ async function fetchGeminiWithRetry(
 
     for (let attempt = 0; attempt < attemptsPerModel; attempt += 1) {
       try {
-        const response = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-goog-api-key': process.env.GEMINI_API_KEY as string,
-          },
-          body,
-        });
+        // The timer covers only the wait for Gemini to start responding; once
+        // headers arrive it is cleared and the reply streams normally.
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), startTimeoutMs);
+        let response: Response;
+        try {
+          response = await fetch(url, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-goog-api-key': process.env.GEMINI_API_KEY as string,
+            },
+            body,
+            signal: controller.signal,
+          });
+        } catch (error) {
+          if (controller.signal.aborted) throw new GeminiStartTimeout(model);
+          throw error;
+        } finally {
+          clearTimeout(timer);
+        }
+        const isLastModel = modelIndex === models.length - 1;
+        // An unknown or retired model name: try the fallback model instead.
+        if (response.status === 404 && !isLastModel) {
+          console.warn('[chat] Gemini model not found; trying fallback', { model });
+          break;
+        }
         if (response.ok || !isTransientGeminiStatus(response.status)) {
           return { response, model };
         }
 
-        const isLastAttempt =
-          modelIndex === models.length - 1 && attempt === attemptsPerModel - 1;
+        const isLastAttempt = isLastModel && attempt === attemptsPerModel - 1;
         if (isLastAttempt) return { response, model };
 
         console.warn('[chat] transient Gemini response; retrying', {
@@ -335,9 +399,15 @@ async function fetchGeminiWithRetry(
           attempt: attempt + 1,
           status: response.status,
         });
-      } catch {
-        const isLastAttempt =
-          modelIndex === models.length - 1 && attempt === attemptsPerModel - 1;
+      } catch (error) {
+        const isLastModel = modelIndex === models.length - 1;
+        // A slow model: go straight to the fallback rather than wait again.
+        if (error instanceof GeminiStartTimeout) {
+          if (isLastModel) throw error;
+          console.warn('[chat] Gemini did not start in time; trying fallback', { model });
+          break;
+        }
+        const isLastAttempt = isLastModel && attempt === attemptsPerModel - 1;
         if (isLastAttempt) throw error;
         console.warn('[chat] Gemini network failure; retrying', {
           model,

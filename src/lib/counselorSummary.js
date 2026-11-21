@@ -304,7 +304,7 @@ export function createCounselorSummaryPdf({
   pdf.text('NEXUS  /  FIND YOUR PATH', margin, 14);
   pdf.setFontSize(21);
   pdf.setTextColor(255, 255, 255);
-  pdf.text('Counselor conversation brief', margin, 29);
+  pdf.text('Nexus recommendations summary', margin, 29);
   pdf.setFont('helvetica', 'normal');
   pdf.setFontSize(8.5);
   pdf.setTextColor(225, 241, 229);

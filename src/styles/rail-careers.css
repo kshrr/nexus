@@ -10,6 +10,9 @@
   background: #f5f2e8;
   font-family: 'Helvetica Neue', Arial, sans-serif;
 }
+.career-public-page #main {
+  background: #f5f2e8;
+}
 .rail-career-page h1,
 .rail-career-page h2,
 .rail-career-page h3 {
@@ -367,6 +370,26 @@
 }
 .career-detail-page {
   padding: 24px;
+  max-width: 1264px;
+  margin-inline: auto;
+}
+.career-level-picker {
+  display: grid;
+  gap: 8px;
+  max-width: 320px;
+  margin-bottom: 18px;
+}
+.career-level-picker label {
+  font-size: 12px;
+  font-weight: 700;
+}
+.career-level-picker select {
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid #dcd9cb;
+  border-radius: 3px;
+  background: #fff;
+  color: #24344b;
 }
 .career-back-link {
   display: inline-flex;
