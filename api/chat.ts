@@ -14,7 +14,10 @@
  * another student's data — that is vulnerability V-02.
  */
 import { createClient } from '@supabase/supabase-js';
-import { corsHeaders, fail, preflight } from '../supabase/functions/_shared/http.ts';
+// Import TypeScript siblings with `.js`: Vercel compiles each file to .js and
+// Node resolves the specifier literally, so a `.ts` specifier crashes the
+// function at load (ERR_MODULE_NOT_FOUND). Vite and Vitest map `.js` to `.ts`.
+import { corsHeaders, fail, preflight } from '../supabase/functions/_shared/http.js';
 import {
   HISTORY_TURNS,
   RATE_LIMIT_PER_HOUR,
@@ -24,13 +27,13 @@ import {
   filterOutput,
   validateMessage,
   type ChatTurn,
-} from '../supabase/functions/_shared/chat-context.ts';
-import { buildContents, buildSystemPrompt } from '../supabase/functions/chat/system-prompt.ts';
+} from '../supabase/functions/_shared/chat-context.js';
+import { buildContents, buildSystemPrompt } from '../supabase/functions/chat/system-prompt.js';
 import {
   extractGeminiChunk,
   isTransientGeminiStatus,
   splitSseEvents,
-} from '../supabase/functions/_shared/gemini.ts';
+} from '../supabase/functions/_shared/gemini.js';
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-3.6-flash';
 const GEMINI_FALLBACK_MODEL = process.env.GEMINI_FALLBACK_MODEL ?? 'gemini-3.5-flash-lite';
