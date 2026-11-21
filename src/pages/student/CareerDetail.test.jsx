@@ -6,22 +6,30 @@ const f = vi.hoisted(() => ({
   career: null,
   stages: [],
   level: 'spm',
+  authenticated: true,
+  requestedLevel: vi.fn(),
   save: vi.fn(),
   saved: false,
 }));
 vi.mock('@/hooks/useCareers', () => ({
-  useCareer: () => ({
-    career: f.career,
-    stages: f.stages,
-    courses: [],
-    scholarships: [],
-    loading: false,
-    error: null,
-    reload: () => {},
-  }),
+  useCareer: (_id, level) => {
+    f.requestedLevel(level);
+    return {
+      career: f.career,
+      stages: f.stages,
+      courses: [],
+      scholarships: [],
+      loading: false,
+      error: null,
+      reload: () => {},
+    };
+  },
 }));
 vi.mock('@/context/useAuth', () => ({
-  useAuth: () => ({ profile: { education_level: f.level } }),
+  useAuth: () => ({
+    isAuthenticated: f.authenticated,
+    profile: f.authenticated ? { education_level: f.level } : null,
+  }),
 }));
 vi.mock('@/hooks/useRiasec', () => ({
   useRiasecResult: () => ({ result: { holland_code: 'ICS' }, loading: false }),
@@ -44,6 +52,9 @@ function show() {
 }
 beforeEach(() => {
   f.level = 'spm';
+  f.authenticated = true;
+  f.requestedLevel.mockClear();
+  f.save.mockClear();
   f.career = reviewedCareer();
   f.stages = [
     {
@@ -57,6 +68,23 @@ beforeEach(() => {
   ];
   f.save.mockResolvedValue({ error: null });
   f.saved = false;
+});
+it('lets a visitor browse the detail and choose a starting level without saving', () => {
+  f.authenticated = false;
+  f.stages = [];
+  show();
+  expect(screen.getByRole('heading', { name: 'Reference occupations' })).toBeVisible();
+  expect(screen.getByRole('link', { name: /Sign in to save pathway/ })).toHaveAttribute(
+    'href',
+    '/login'
+  );
+  expect(screen.queryByRole('button', { name: 'Save pathway' })).not.toBeInTheDocument();
+  expect(screen.getByLabelText('Starting education level')).toHaveValue('');
+  fireEvent.change(screen.getByLabelText('Starting education level'), {
+    target: { value: 'stpm' },
+  });
+  expect(f.requestedLevel).toHaveBeenLastCalledWith('stpm');
+  expect(f.save).not.toHaveBeenCalled();
 });
 it('shows source scope, actual reference and advisory subject guidance without hiding the roadmap', () => {
   show();

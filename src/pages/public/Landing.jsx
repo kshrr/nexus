@@ -3,11 +3,7 @@ import { Link } from 'react-router-dom';
 import { LazyMotion, domAnimation, m, useInView, useReducedMotion } from 'motion/react';
 import { Icon } from '@/components/ui';
 import { NetworkMap, TrainDrawing } from '@/components/landing/RailIllustrations';
-import {
-  GuidancePreview,
-  InterestPreview,
-  StationArchitecture,
-} from '@/components/landing/ProductPreviews';
+import { LandingOpening } from '@/components/landing/LandingOpening';
 import { UniversityExplorer } from '@/components/landing/UniversityExplorer';
 import '@/styles/rail-landing.css';
 import '@/styles/landing-refresh.css';
@@ -92,137 +88,6 @@ function RailButton({ to, children }) {
       {children}
       <Icon name="arrowRight" className="h-4 w-4" />
     </Link>
-  );
-}
-
-function Hero() {
-  return (
-    <section className="rail-hero rail-editorial-hero" aria-labelledby="rail-hero-title">
-      <div className="rail-shell">
-        <Reveal className="rail-platform-label">
-          <span className="rail-line-token">N</span>
-          <span>YOUR FUTURE. YOUR PATH. YOUR NEXUS.</span>
-        </Reveal>
-        <div className="rail-editorial-layout">
-          <Reveal className="rail-editorial-copy" delay={0.08}>
-            <h1 id="rail-hero-title">
-              Find your direction.
-              <br />
-              <em>Connect your future.</em>
-            </h1>
-            <p>
-              Bring your interests, strengths and ambitions together.
-              <br className="rail-desktop-break" /> Discover the courses, careers and scholarships
-              that could shape your next chapter.
-            </p>
-            <div className="rail-hero-actions">
-              <RailButton to="/register">Find your path</RailButton>
-              <a href="#journey" className="rail-scroll-link">
-                Explore Nexus <span aria-hidden="true">↓</span>
-              </a>
-            </div>
-          </Reveal>
-          <Reveal className="rail-hero-index" delay={0.18}>
-            <span className="rail-hero-index-label">A CLEARER WAY FORWARD</span>
-            <div className="rail-hero-monogram" aria-hidden="true">
-              N<span>↗</span>
-            </div>
-            <div className="rail-hero-index-stops">
-              <span>
-                <i /> Start with you
-              </span>
-              <span>
-                <i /> Connect the possibilities
-              </span>
-              <span>
-                <i /> Choose your next chapter
-              </span>
-            </div>
-            <span className="rail-hero-index-footer">MADE FOR MALAYSIAN STUDENTS</span>
-          </Reveal>
-        </div>
-        <div className="rail-hero-destinations">
-          <span>ONE PLACE TO EXPLORE</span>
-          <a href="#journey">Your interests</a>
-          <span aria-hidden="true">↗</span>
-          <a href="#features">Courses & careers</a>
-          <span aria-hidden="true">↗</span>
-          <Link to="/scholarships">Scholarships</Link>
-          <span aria-hidden="true">↗</span>
-          <a href="#universities">Universities</a>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function Journey() {
-  return (
-    <section
-      id="journey"
-      className="rail-product-journey"
-      aria-label="Explore the ticket hall and information desk"
-    >
-      <div className="rail-shell">
-        <article className="rail-product-stop">
-          <Reveal className="rail-product-copy">
-            <span className="rail-eyebrow">01 / THE TICKET HALL</span>
-            <h2>
-              A small first step.
-              <br />
-              <em>A world of possibility.</em>
-            </h2>
-            <p>
-              Your journey starts with you. Discover what interests you, connect your academic
-              strengths and give your ambitions a place to begin.
-            </p>
-            <ol className="rail-product-steps">
-              <li>
-                <span>01</span>Create your profile
-              </li>
-              <li>
-                <span>02</span>Discover your interests
-              </li>
-              <li>
-                <span>03</span>Connect your strengths
-              </li>
-            </ol>
-            <Link to="/register" className="rail-detail-link">
-              Get your journey started <Icon name="arrowRight" className="h-4 w-4" />
-            </Link>
-          </Reveal>
-          <Reveal className="rail-product-stage">
-            <StationArchitecture />
-            <InterestPreview />
-          </Reveal>
-        </article>
-        <article className="rail-product-stop rail-product-stop-reverse">
-          <Reveal className="rail-product-copy">
-            <span className="rail-eyebrow">02 / THE INFORMATION DESK</span>
-            <h2>
-              A little guidance.
-              <br />
-              <em>A clearer way forward.</em>
-            </h2>
-            <p>
-              See your options in one place. Explore courses and career pathways, discover
-              scholarship opportunities and get help understanding your next step.
-            </p>
-            <p className="rail-product-note">
-              <Icon name="compass" className="h-4 w-4" /> Guidance to help you explore. You decide
-              where to go.
-            </p>
-            <Link to="/recommendations" className="rail-detail-link">
-              Explore your possibilities <Icon name="arrowRight" className="h-4 w-4" />
-            </Link>
-          </Reveal>
-          <Reveal className="rail-product-stage">
-            <StationArchitecture desk />
-            <GuidancePreview />
-          </Reveal>
-        </article>
-      </div>
-    </section>
   );
 }
 
@@ -404,8 +269,7 @@ export function Landing() {
   return (
     <LazyMotion features={domAnimation} strict>
       <div className="nexus-rail-landing nexus-landing-refresh">
-        <Hero />
-        <Journey />
+        <LandingOpening stops={stops} />
         <Connections />
         <UniversityExplorer />
         <section className="rail-faq rail-shell" aria-labelledby="rail-faq-title">

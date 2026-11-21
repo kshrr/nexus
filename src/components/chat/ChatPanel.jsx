@@ -1,14 +1,28 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Alert, Button, Spinner } from '@/components/ui';
 import { useChat, useChatContextSummary } from '@/hooks/useChat';
 import { useAuth } from '@/context/useAuth';
 import { MAX_MESSAGE_LENGTH } from '@/config/policy';
+import { savePendingQuestion, takePendingQuestion } from '@/lib/chatPending';
+import { GUEST_FAQ, guestAnswerFor } from '@/lib/chatGuestFaq';
 import { AiDisclosure } from './AiDisclosure';
 import { ContextDisclosure } from './ContextDisclosure';
 import { MessageList } from './MessageList';
 import { SuggestedQuestions } from './SuggestedQuestions';
 
 const FIRST_SESSION_KEY = 'nexus.chat.noticeSeen';
+
+/**
+ * The reply to a question a visitor types. A typed question may be personal, and
+ * personal answers need the student's context, so it waits for sign-in. Nothing
+ * is sent.
+ */
+export const SIGN_IN_REPLY =
+  'To answer your own questions, I need to know a little about you. Please sign in or create a free Nexus account, then I can tailor my advice to your interests, results and recommendations. Until then, you can tap any of the questions about Nexus below.';
+
+const LINK_BASE =
+  'inline-flex h-10 items-center justify-center rounded-pill px-4 text-body-sm font-semibold transition-all duration-200';
 
 /**
  * The chat panel (FR-CHAT-02, ui-spec §8.3).
@@ -20,12 +34,53 @@ const FIRST_SESSION_KEY = 'nexus.chat.noticeSeen';
  * @param {{ open: boolean, onClose: () => void }} props
  */
 export function ChatPanel({ open, onClose }) {
-  const { profile } = useAuth();
-  const { messages, loadingHistory, streaming, error, send, stop, clearError, hasHistory } =
-    useChat();
+  const { profile, isAuthenticated } = useAuth();
+  const location = useLocation();
+  const chat = useChat();
   const { summary, loading: loadingSummary } = useChatContextSummary();
 
   const [input, setInput] = useState('');
+  // Visitors: questions and fixed answers, kept in this panel only (never stored).
+  const [guestMessages, setGuestMessages] = useState([]);
+
+  const isGuest = !isAuthenticated;
+  const messages = isGuest ? guestMessages : chat.messages;
+  const hasHistory = isGuest ? guestMessages.length > 0 : chat.hasHistory;
+  const loadingHistory = isGuest ? false : chat.loadingHistory;
+  const { streaming, error, stop, clearError } = chat;
+
+  // A question typed before signing in waits in the composer; the student sends it.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const pending = takePendingQuestion();
+    if (pending) setInput(pending);
+  }, [isAuthenticated]);
+
+  const askedByGuest = new Set(
+    guestMessages.filter((m) => m.sender === 'user').map((m) => m.message)
+  );
+  const guestQuestions = GUEST_FAQ.map((f) => f.question).filter((q) => !askedByGuest.has(q));
+  const showSignIn = isGuest && guestMessages.at(-1)?.message === SIGN_IN_REPLY;
+
+  /**
+   * Signed-in students reach the assistant. Visitors get the fixed answer to a
+   * question about Nexus, or — for anything they type — a request to sign in.
+   */
+  const ask = (text) => {
+    if (isGuest) {
+      const answer = guestAnswerFor(text);
+      if (!answer) savePendingQuestion(text);
+      const id = `guest-${Date.now()}-${guestMessages.length}`;
+      setGuestMessages((prev) => [
+        ...prev,
+        { id, sender: 'user', message: text },
+        { id: `${id}-reply`, sender: 'assistant', message: answer ?? SIGN_IN_REPLY },
+      ]);
+      return;
+    }
+    clearError();
+    chat.send(text);
+  };
   const [noticeSeen, setNoticeSeen] = useState(true);
   const panelRef = useRef(null);
   const inputRef = useRef(null);
@@ -65,8 +120,7 @@ export function ChatPanel({ open, onClose }) {
     const text = input.trim();
     if (!text || streaming) return;
     setInput('');
-    clearError();
-    send(text);
+    ask(text);
   };
 
   const firstName = (profile?.full_name ?? '').trim().split(/\s+/)[0];
@@ -96,7 +150,7 @@ export function ChatPanel({ open, onClose }) {
         </button>
       </header>
 
-      <ContextDisclosure summary={summary} loading={loadingSummary} />
+      {!isGuest && <ContextDisclosure summary={summary} loading={loadingSummary} />}
 
       {/* conversation ------------------------------------------------- */}
       <div className="flex-1 overflow-y-auto px-4 py-4">
@@ -110,7 +164,20 @@ export function ChatPanel({ open, onClose }) {
           </div>
         ) : (
           <>
-            {!hasHistory && (
+            {!hasHistory && isGuest && (
+              <div className="mb-4">
+                <p className="text-body text-ink-900">
+                  Hi! I can tell you about Nexus and how to use it. Tap a question below to get
+                  started.
+                </p>
+                <p className="mt-2 text-body-sm text-ink-700">
+                  Want advice about your own interests, results or recommendations? Sign in and I
+                  can tailor my answers to you.
+                </p>
+              </div>
+            )}
+
+            {!hasHistory && !isGuest && (
               <div className="mb-4">
                 <p className="text-body text-ink-900">
                   Hi{firstName ? ` ${firstName}` : ''}. I can explain your recommendations, help you
@@ -126,16 +193,39 @@ export function ChatPanel({ open, onClose }) {
 
             <MessageList messages={messages} streaming={streaming} />
 
-            {!hasHistory && !streaming && (
+            {showSignIn && (
+              <div className="mt-3 flex flex-wrap gap-2" role="group" aria-label="Sign in to chat">
+                <Link
+                  to="/login"
+                  state={{ from: location }}
+                  onClick={onClose}
+                  className={`${LINK_BASE} bg-pine-700 text-white hover:bg-pine-900`}
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={onClose}
+                  className={`${LINK_BASE} border border-ink-300 bg-surface text-ink-900 hover:border-pine-300 hover:bg-pine-50`}
+                >
+                  Create account
+                </Link>
+              </div>
+            )}
+
+            {isGuest && guestQuestions.length > 0 && (
               <div className="mt-4">
                 <SuggestedQuestions
-                  summary={summary}
-                  disabled={streaming}
-                  onSelect={(q) => {
-                    clearError();
-                    send(q);
-                  }}
+                  questions={guestQuestions}
+                  label={hasHistory ? 'More about Nexus:' : 'Questions about Nexus:'}
+                  onSelect={ask}
                 />
+              </div>
+            )}
+
+            {!isGuest && !hasHistory && !streaming && (
+              <div className="mt-4">
+                <SuggestedQuestions summary={summary} disabled={streaming} onSelect={ask} />
               </div>
             )}
           </>
@@ -170,7 +260,7 @@ export function ChatPanel({ open, onClose }) {
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) submit(e);
             }}
-            placeholder="Ask a question…"
+            placeholder={isGuest ? 'Ask your own question (sign-in needed)…' : 'Ask a question…'}
             maxLength={MAX_MESSAGE_LENGTH + 100}
             aria-describedby={overLimit ? 'chat-limit' : undefined}
             aria-invalid={overLimit || undefined}

@@ -188,10 +188,10 @@ it('connects every destination tab to an existing panel through aria-controls', 
 });
 it('downloads the current results and all recommendation rows for the counselor', async () => {
   show();
-  const button = screen.getByRole('button', { name: 'Download counselor summary' });
+  const button = screen.getByRole('button', { name: 'Download summary' });
   expect(button).toBeEnabled();
   fireEvent.click(button);
-  await waitFor(() => expect(download.filename).toBe('nexus-counselor-summary.pdf'));
+  await waitFor(() => expect(download.filename).toBe('nexus-recommendations-summary.pdf'));
   expect(download.input.riasec.holland_code).toBe('IAS');
   expect(download.input.careers).toHaveLength(6);
   expect(download.input.courses).toHaveLength(1);

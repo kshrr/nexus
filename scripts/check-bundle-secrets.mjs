@@ -94,13 +94,13 @@ console.log(`  pattern checks: ${PATTERNS.length}`);
 console.log(
   literals.length
     ? `  literal checks: ${literals.map((l) => l.name).join(', ')}`
-    : '  literal checks: none available locally (secrets live in the Edge runtime, not .env)'
+    : '  literal checks: none available locally (server secrets live in Vercel, Supabase or GitHub, not .env)'
 );
 console.log('');
 
 if (findings.length === 0) {
   console.log('PASS  No API key, token or private key found in any client asset.');
-  console.log('      AC-34 / NFR01c holds: the Gemini key exists only in the Edge runtime.');
+  console.log('      AC-34 / NFR01c holds: the Gemini key exists only on the server (Vercel).');
   process.exit(0);
 }
 

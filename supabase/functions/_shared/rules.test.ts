@@ -468,6 +468,16 @@ describe('ranking, dedupe and limits — §9.3 / §9.5', () => {
 
 // ---------------------------------------------------------------------------
 describe('secondary signal — careers.riasec_profile (§9.6)', () => {
+  it('skips an active career with no interest code', () => {
+    const career = { ...CATALOG.careers[0], riasec_profile: null };
+    const res = generateRecommendations(
+      { version: '1', rules: [] },
+      facts({ hollandCode: 'ISA' }),
+      { careers: [career], courses: [] }
+    );
+    expect(res.secondaryCareers).toEqual([]);
+  });
+
   it('uses genuine one-letter references without padding or scores', () => {
     const c = reviewedCareer({ code: 'S', overrides: { id: 'teacher', name: 'Teacher' } });
     const res = generateRecommendations(

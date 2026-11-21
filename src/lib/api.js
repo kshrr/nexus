@@ -110,8 +110,8 @@ export const FUNCTIONS = Object.freeze({
   SCORE_RIASEC: 'score-riasec',
   RECOMMEND: 'recommend',
   MATCH_SCHOLARSHIP: 'match-scholarship',
-  CHAT: 'chat',
   TRIGGER_CRAWL: 'trigger-crawl',
   TRIGGER_COURSE_CRAWL: 'trigger-course-crawl',
+  // Reserved for the planned account-deletion function; it is not built yet.
   DELETE_ACCOUNT: 'delete-account',
 });

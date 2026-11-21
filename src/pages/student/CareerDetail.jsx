@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { Icon, Skeleton } from '@/components/ui';
 import { ErrorState } from '@/components/feedback';
 import { PathwayRoadmap } from '@/components/career/PathwayRoadmap';
@@ -17,7 +17,7 @@ import {
   getSectionReview,
   normaliseStageReview,
 } from '@/lib/careerEvidence';
-import { EDUCATION_LEVEL_LABELS, RIASEC_DIMENSIONS } from '@/types';
+import { EDUCATION_LEVELS, EDUCATION_LEVEL_LABELS, RIASEC_DIMENSIONS } from '@/types';
 import '@/styles/rail-careers.css';
 
 const SUBJECT_LABELS = {
@@ -98,10 +98,13 @@ function ContentPanel({ career, section, title, items, children }) {
 }
 export function CareerDetail() {
   const { id } = useParams();
-  const { profile } = useAuth();
+  const location = useLocation();
+  const { isAuthenticated, profile } = useAuth();
+  const [selectedLevel, setSelectedLevel] = useState('');
+  const educationLevel = selectedLevel || profile?.education_level || null;
   const { career, stages, courses, scholarships, loading, error, reload } = useCareer(
     id,
-    profile?.education_level
+    educationLevel
   );
   const { result: riasec, loading: loadingRiasec } = useRiasecResult();
   const { strengths, loading: loadingStrengths } = useSubjectStrengths();
@@ -135,7 +138,7 @@ export function CareerDetail() {
     );
   const evidence = normaliseCareerEvidence(career);
   const overview = getSectionReview(career, 'overview');
-  const level = EDUCATION_LEVEL_LABELS[profile?.education_level];
+  const level = EDUCATION_LEVEL_LABELS[educationLevel];
   const fit = buildCareerFit(career, riasec, strengths);
   const reviewedStops = stages.filter((stage) => normaliseStageReview(stage.content_review)).length;
   return (
@@ -159,7 +162,14 @@ export function CareerDetail() {
             </p>
           )}
           <div className="career-hero-actions">
-            <SavePathway key={career.id} saved={saved} careerId={career.id} />
+            {isAuthenticated ? (
+              <SavePathway key={career.id} saved={saved} careerId={career.id} />
+            ) : (
+              <Link className="career-action" to="/login" state={{ from: location }}>
+                <Icon name="bookmark" />
+                Sign in to save pathway
+              </Link>
+            )}
             <a className="career-action career-action-secondary" href="#career-pathway">
               See the pathway <Icon name="arrowRight" />
             </a>
@@ -186,7 +196,7 @@ export function CareerDetail() {
           ))}
         </aside>
       )}
-      {!loadingRiasec && !loadingStrengths && (
+      {isAuthenticated && !loadingRiasec && !loadingStrengths && (
         <div className="career-personal-context">
           <FitExplanation fit={fit} hasRiasec={Boolean(riasec)} />
         </div>
@@ -276,10 +286,24 @@ export function CareerDetail() {
           and professional registration separately. Programme places, credit transfer and employment
           are not guaranteed.
         </p>
+        <div className="career-level-picker">
+          <label htmlFor="career-starting-level">Starting education level</label>
+          <select
+            id="career-starting-level"
+            value={educationLevel ?? ''}
+            onChange={(event) => setSelectedLevel(event.target.value)}
+          >
+            <option value="">Choose a starting level</option>
+            {EDUCATION_LEVELS.map((item) => (
+              <option key={item} value={item}>
+                {EDUCATION_LEVEL_LABELS[item]}
+              </option>
+            ))}
+          </select>
+        </div>
         {!level ? (
           <p className="career-guidance-notice">
-            Set your education level in your profile to choose a starting context.{' '}
-            <Link to="/profile">Open profile →</Link>
+            Set your education level above to choose a starting context.
           </p>
         ) : evidence.status !== 'pending' && stages.length ? (
           <PathwayRoadmap stages={stages} />

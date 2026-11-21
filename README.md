@@ -1,6 +1,6 @@
 # Nexus
 
-**Live site:** [Add Vercel URL after production deployment](https://vercel.com/)
+**Live site:** [nexus-bay-five.vercel.app](https://nexus-bay-five.vercel.app)
 
 Nexus is a final-year project for Malaysian students exploring courses, careers, scholarships and their interests. It is still in development; features and data may change.
 
@@ -21,7 +21,7 @@ npm.cmd run dev
 
 Vite prints the local URL (normally `http://localhost:5174`). The public pages can render without Supabase settings; sign-in, database features and chat need a configured Supabase project. `npm.cmd run build` creates the deployable `dist/` directory.
 
-The local Vite server serves the frontend only. To test `/api/chat` locally, use `vercel dev` after linking a Vercel project and setting its local environment variables. The production Vercel deployment serves both the frontend and `/api/chat`.
+To use the chat assistant locally, also add `GEMINI_API_KEY` to `.env` (no `VITE_` prefix) and restart `npm.cmd run dev`. The dev server then runs the same `api/chat.ts` handler that Vercel runs in production (see `scripts/devApiChat.js`); the key stays in the Node process and never reaches browser code. `vercel dev` also works. The production Vercel deployment serves both the frontend and `/api/chat`.
 
 ## Environment variable names
 

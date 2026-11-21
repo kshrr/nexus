@@ -1,9 +1,9 @@
-import realistic from '@/assets/riasec/realistic.png';
-import investigative from '@/assets/riasec/investigative.png';
-import artistic from '@/assets/riasec/artistic.png';
-import social from '@/assets/riasec/social.png';
-import enterprising from '@/assets/riasec/enterprising.png';
-import conventional from '@/assets/riasec/conventional.png';
+import realistic from '@/assets/riasec/realistic.webp';
+import investigative from '@/assets/riasec/investigative.webp';
+import artistic from '@/assets/riasec/artistic.webp';
+import social from '@/assets/riasec/social.webp';
+import enterprising from '@/assets/riasec/enterprising.webp';
+import conventional from '@/assets/riasec/conventional.webp';
 
 const portraits = {
   R: realistic,
@@ -24,8 +24,8 @@ export function RiasecPortrait({ letter }) {
       src={source}
       alt=""
       aria-hidden="true"
-      width="1024"
-      height="1536"
+      width="512"
+      height="768"
       loading="lazy"
       decoding="async"
     />
