@@ -48,3 +48,16 @@ export function passwordChecklist(value) {
     { label: 'A number', met: /[0-9]/.test(value) },
   ];
 }
+
+/**
+ * Year of birth is optional. A blank value is fine; anything else must be a plausible year.
+ * @param {string | number | null | undefined} value @returns {string | null}
+ */
+export function validateBirthYear(value, now = new Date()) {
+  const text = String(value ?? '').trim();
+  if (!text) return null;
+  if (!/^\d{4}$/.test(text)) return 'Enter a four-digit year, like 2008.';
+  const year = Number(text);
+  if (year < 1950 || year > now.getFullYear() - 10) return 'Enter the year you were born.';
+  return null;
+}

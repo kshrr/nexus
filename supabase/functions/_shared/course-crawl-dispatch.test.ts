@@ -23,7 +23,7 @@ function dependencies({
                 if (table === 'course_source_registry')
                   return {
                     select: async () => ({
-                      data: [{ source: 'um' }, { source: 'unimap' }, { source: 'usim' }],
+                      data: [{ source: 'um' }, { source: 'unisza' }, { source: 'utem' }],
                       error: null,
                     }),
                   };

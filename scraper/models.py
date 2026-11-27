@@ -106,6 +106,10 @@ class ScrapedScholarship:
     deadline: date | None = None
     application_link: str | None = None
     criteria: list[ScrapedCriterion] = field(default_factory=list)
+    #: Official PDFs that hold part of the requirements (approved-institution
+    #: lists, a yearly advertisement): [{"label", "url"}]. Shown to students as
+    #: links that open in a new tab; built with sanitise.clean_documents.
+    source_documents: list[dict] = field(default_factory=list)
 
     # Set by the pipeline, not the parser.
     source_hash: str | None = None
@@ -135,6 +139,7 @@ class ScrapedScholarship:
             "status": "flagged" if self.is_flagged else self.status,
             "source_url": self.source_url,
             "source_hash": self.source_hash,
+            "source_documents": self.source_documents,
             "last_scraped_at": (self.scraped_at or datetime.now()).isoformat(),
         }
 

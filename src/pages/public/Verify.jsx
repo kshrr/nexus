@@ -59,8 +59,9 @@ export function Verify() {
       return;
     }
 
-    if (/expired/i.test(err.message)) {
-      setError('This code has expired. Request a new one.');
+    // Supabase answers "expired or invalid" for a wrong code and an old one alike, so say both.
+    if (/rate|too many/i.test(err.message)) {
+      setError('Too many tries. Wait a minute, then try again.');
       return;
     }
     const left = attemptsLeft - 1;
@@ -68,7 +69,7 @@ export function Verify() {
     setCode('');
     setError(
       left > 0
-        ? `That code isn't right. ${left} attempt${left === 1 ? '' : 's'} remaining.`
+        ? `That code is incorrect or has expired. ${left} attempt${left === 1 ? '' : 's'} remaining. You can also request a new code.`
         : 'Too many attempts. Request a new code to continue.'
     );
   }
@@ -150,7 +151,7 @@ export function Verify() {
         </button>
         {resent && (
           <p role="status" className="text-body-sm text-pine-700">
-            New code sent — check your inbox.
+            New code sent if this email has an unverified account. Check your spam folder too.
           </p>
         )}
       </form>

@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom';
 import { PublicHeader } from './PublicHeader';
 import { Footer } from './Footer';
+import { Breadcrumbs } from './Breadcrumbs';
 import '@/styles/rail-admin.css';
 
 /**
@@ -11,6 +12,7 @@ export function AdminShell() {
   return (
     <div className="site-admin-shell rail-admin-shell min-h-screen flex flex-col bg-paper">
       <PublicHeader />
+      <Breadcrumbs />
       <div className="site-shell-body flex-1">
         <div className="min-w-0 flex-1">
           <main id="main" className="mx-auto max-w-screen-2xl px-4 py-6 md:px-8 md:py-8 lg:px-10">

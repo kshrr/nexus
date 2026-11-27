@@ -44,7 +44,7 @@ FIELD_KEYWORDS: list[tuple[re.Pattern, str]] = [
     (
         re.compile(
             r"sains\s+komputer|computer\s+science|software\s+engineer|"
-            r"teknologi\s+maklumat|information\s+technology",
+            r"teknologi\s+maklumat|information\s+technology|\bcomputing\b|\bpengkomputeran\b",
             re.I,
         ),
         "Computer Science",

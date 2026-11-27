@@ -4,13 +4,29 @@ import { useAuth } from '@/context/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useSubjects } from '@/hooks/useSubjects';
 import { Alert, Button, Input, RadioGroup, Select } from '@/components/ui';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { StepIndicator } from '@/components/profile/StepIndicator';
+import { EligibilityReadiness } from '@/components/profile/EligibilityReadiness';
 import { GradeEntryTable } from '@/components/academic/GradeEntryTable';
-import { EDUCATION_LEVELS, EDUCATION_LEVEL_LABELS } from '@/types';
+import { SpmResultUpload } from '@/components/academic/SpmResultUpload';
+import { mergeDetectedGrades } from '@/lib/gradeMerge';
+import {
+  EDUCATION_LEVELS,
+  EDUCATION_LEVEL_LABELS,
+  INCOME_BAND_OPTIONS,
+  NATIONALITY_OPTIONS,
+} from '@/types';
 import { TARGET_INDUSTRIES } from '@/config/policy';
-import { validateFullName } from '@/lib/validation';
+import { validateBirthYear, validateFullName } from '@/lib/validation';
+import '@fontsource/barlow/400.css';
+import '@fontsource/barlow/500.css';
+import '@fontsource/barlow/600.css';
+import '@fontsource/barlow/700.css';
+import '@fontsource/barlow-condensed/700.css';
+import '@/styles/profile-station.css';
 
-const STEPS = ['About you', 'Education level', 'Your results', 'Your goals'];
+const SPM_ONLY = ['spm_actual'];
+const STEPS = ['About you', 'Education level', 'SPM results', 'Scholarship checks'];
 
 const LEVEL_DESCRIPTIONS = {
   spm: 'Just sat SPM.',
@@ -30,7 +46,7 @@ const LEVEL_DESCRIPTIONS = {
  */
 export function ProfileSetup() {
   const { profile } = useAuth();
-  const { completeProfileSetup, updateProfile, saving } = useProfile();
+  const { completeProfileSetup, updateProfile, saveGrades, saving } = useProfile();
   const { subjects } = useSubjects();
   const navigate = useNavigate();
 
@@ -40,18 +56,20 @@ export function ProfileSetup() {
   const [educationLevel, setEducationLevel] = useState(profile?.education_level ?? null);
   const [careerGoal, setCareerGoal] = useState(profile?.career_goal ?? '');
   const [targetIndustry, setTargetIndustry] = useState(profile?.target_industry ?? '');
+  const [nationality, setNationality] = useState(profile?.nationality ?? '');
+  const [birthYear, setBirthYear] = useState(profile?.birth_year ? String(profile.birth_year) : '');
+  const [incomeBand, setIncomeBand] = useState(profile?.household_income_band ?? '');
 
   // grade entry state
   const [selectedCodes, setSelectedCodes] = useState(/** @type {string[]} */ ([]));
   const [grades, setGrades] = useState(/** @type {Record<string, Record<string, string>>} */ ({}));
 
-  const isSpm = educationLevel === 'spm';
-
   const stepValid = useMemo(() => {
     if (step === 0) return !validateFullName(fullName);
     if (step === 1) return Boolean(educationLevel);
-    return true; // steps 2 (results) and 3 (goals) are optional
-  }, [step, fullName, educationLevel]);
+    if (step === 3) return !validateBirthYear(birthYear);
+    return true; // the results step and the answers in step 4 are optional
+  }, [step, fullName, educationLevel, birthYear]);
 
   function next() {
     if (!stepValid) return;
@@ -71,13 +89,29 @@ export function ProfileSetup() {
     );
   }
 
+  const answers = {
+    nationality,
+    educationLevel,
+    careerGoal,
+    targetIndustry,
+    birthYear,
+    householdIncomeBand: incomeBand,
+    gradeCount: gradeList().length,
+  };
+
   async function saveAndExit() {
     await updateProfile({
       full_name: fullName.trim(),
       education_level: educationLevel,
       career_goal: careerGoal.trim() || null,
       target_industry: targetIndustry.trim() || null,
+      nationality: nationality || null,
+      birth_year: birthYear && !validateBirthYear(birthYear) ? Number(birthYear) : null,
+      household_income_band: incomeBand || null,
     });
+    // Results entered so far are kept too, so "finish later" doesn't lose them.
+    const entered = gradeList();
+    if (entered.length) await saveGrades(entered);
     navigate('/');
   }
 
@@ -88,7 +122,10 @@ export function ProfileSetup() {
       educationLevel,
       careerGoal,
       targetIndustry,
-      grades: isSpm ? gradeList() : [],
+      nationality,
+      birthYear: birthYear && !validateBirthYear(birthYear) ? Number(birthYear) : null,
+      householdIncomeBand: incomeBand,
+      grades: gradeList(),
     });
     if (error) {
       setFormError(error.message || 'Something went wrong saving your profile. Try again.');
@@ -103,58 +140,68 @@ export function ProfileSetup() {
   }
 
   return (
-    <div className="mx-auto max-w-xl">
-      <h1 className="mb-1 text-display font-serif">Set up your profile</h1>
-      <p className="mb-6 text-body text-ink-700">
-        A few short steps so Nexus can tailor what it shows you.
-      </p>
+    <div className="pf">
+      <header className="pf-hero">
+        <Breadcrumbs tone="light" />
+        <h1>Set up your profile</h1>
+        <p>A few short steps so Nexus can tailor what it shows you.</p>
+      </header>
+      <div className="pf-panel">
+        <StepIndicator steps={STEPS} current={step} />
 
-      <StepIndicator steps={STEPS} current={step} />
+        {formError && (
+          <Alert variant="error" className="mb-4">
+            {formError}
+          </Alert>
+        )}
 
-      {formError && (
-        <Alert variant="error" className="mb-4">
-          {formError}
-        </Alert>
-      )}
+        {step === 0 && (
+          <div className="flex flex-col gap-4">
+            <Input
+              label="Full name"
+              autoComplete="name"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              error={step === 0 && fullName ? validateFullName(fullName) : null}
+              required
+            />
+            <p className="text-body-sm text-ink-500">
+              We don’t ask for your date of birth, IC number, phone or address.
+            </p>
+          </div>
+        )}
 
-      {step === 0 && (
-        <div className="flex flex-col gap-4">
-          <Input
-            label="Full name"
-            autoComplete="name"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            error={step === 0 && fullName ? validateFullName(fullName) : null}
-            required
+        {step === 1 && (
+          <RadioGroup
+            label="Where are you in your education?"
+            layout="cards"
+            value={educationLevel}
+            onChange={setEducationLevel}
+            options={EDUCATION_LEVELS.map((lvl) => ({
+              value: lvl,
+              label: EDUCATION_LEVEL_LABELS[lvl],
+              description: LEVEL_DESCRIPTIONS[lvl],
+            }))}
           />
-          <p className="text-body-sm text-ink-500">
-            That’s all we need here — no date of birth, IC number, phone or address.
-          </p>
-        </div>
-      )}
+        )}
 
-      {step === 1 && (
-        <RadioGroup
-          label="Where are you in your education?"
-          layout="cards"
-          value={educationLevel}
-          onChange={setEducationLevel}
-          options={EDUCATION_LEVELS.map((lvl) => ({
-            value: lvl,
-            label: EDUCATION_LEVEL_LABELS[lvl],
-            description: LEVEL_DESCRIPTIONS[lvl],
-          }))}
-        />
-      )}
-
-      {step === 2 &&
-        (isSpm ? (
+        {step === 2 && (
           <div className="flex flex-col gap-3">
             <p className="text-body-sm text-ink-700">
-              Add your SPM subjects and the grades you have across the three exam periods. You can
-              leave any cell blank and add more later.
+              Scholarships often ask for minimum SPM grades, even if you’ve moved on to STPM or a
+              diploma. Add the grades you have and Nexus will show which requirements you meet. You
+              can leave any cell blank and add more later.
             </p>
+            <SpmResultUpload
+              subjects={subjects}
+              onDetected={(found) => {
+                const merged = mergeDetectedGrades(selectedCodes, grades, found);
+                setSelectedCodes(merged.selectedCodes);
+                setGrades(merged.grades);
+              }}
+            />
             <GradeEntryTable
+              examTypes={SPM_ONLY}
               subjects={subjects}
               selectedCodes={selectedCodes}
               grades={grades}
@@ -172,58 +219,81 @@ export function ProfileSetup() {
               }
             />
           </div>
-        ) : (
-          <Alert variant="info" title="We’ll skip this step.">
-            Nexus analyses results for SPM leavers only, because pre-university grading isn’t
-            standardised across programmes. Your recommendations will be based on your interests and
-            goals.
-          </Alert>
-        ))}
+        )}
 
-      {step === 3 && (
-        <div className="flex flex-col gap-4">
-          <Input
-            label="Career goal"
-            hint="Optional. A job or field you’re aiming for."
-            maxLength={200}
-            value={careerGoal}
-            onChange={(e) => setCareerGoal(e.target.value)}
-          />
-          <Select
-            label="Target industry"
-            hint="Optional."
-            placeholder="Choose one…"
-            value={targetIndustry}
-            options={TARGET_INDUSTRIES}
-            onChange={(e) => setTargetIndustry(e.target.value)}
-          />
-        </div>
-      )}
+        {step === 3 && (
+          <div className="flex flex-col gap-4">
+            <p className="text-body-sm text-ink-700">
+              Scholarship requirements are compared with these answers. Skip any you prefer; the
+              requirement will show as “can’t check” instead of “not met”.
+            </p>
+            <RadioGroup
+              label="Are you a Malaysian citizen?"
+              value={nationality}
+              onChange={setNationality}
+              options={NATIONALITY_OPTIONS}
+            />
+            <Input
+              label="Year of birth"
+              hint="Optional. Only the year, to check age limits."
+              inputMode="numeric"
+              maxLength={4}
+              value={birthYear}
+              onChange={(e) => setBirthYear(e.target.value.replace(/\D/g, ''))}
+              error={validateBirthYear(birthYear)}
+            />
+            <Select
+              label="Monthly household income"
+              hint="Optional. A range is enough. Used only to check income limits."
+              placeholder="Prefer not to say"
+              value={incomeBand}
+              options={INCOME_BAND_OPTIONS.filter((option) => option.value)}
+              onChange={(e) => setIncomeBand(e.target.value)}
+            />
+            <Input
+              label="Career goal"
+              hint="Optional. A job or field you’re aiming for."
+              maxLength={200}
+              value={careerGoal}
+              onChange={(e) => setCareerGoal(e.target.value)}
+            />
+            <Select
+              label="Field you want to study"
+              hint="Optional. Used to check scholarships limited to a field."
+              placeholder="Choose one…"
+              value={targetIndustry}
+              options={TARGET_INDUSTRIES}
+              onChange={(e) => setTargetIndustry(e.target.value)}
+            />
+            <EligibilityReadiness answers={answers} />
+          </div>
+        )}
 
-      <div className="mt-8 flex items-center justify-between">
-        <Button variant="secondary" onClick={back} disabled={step === 0 || saving}>
-          Back
-        </Button>
-        <div className="flex items-center gap-3">
-          {step >= 1 && (
-            <button
-              type="button"
-              onClick={saveAndExit}
-              disabled={saving}
-              className="text-body-sm text-pine-700 underline disabled:text-ink-500"
-            >
-              Save and finish later
-            </button>
-          )}
-          {step < STEPS.length - 1 ? (
-            <Button onClick={next} disabled={!stepValid || saving}>
-              Continue
-            </Button>
-          ) : (
-            <Button onClick={finish} loading={saving}>
-              Finish
-            </Button>
-          )}
+        <div className="mt-8 flex items-center justify-between">
+          <Button variant="secondary" onClick={back} disabled={step === 0 || saving}>
+            Back
+          </Button>
+          <div className="flex items-center gap-3">
+            {step >= 1 && (
+              <button
+                type="button"
+                onClick={saveAndExit}
+                disabled={saving}
+                className="text-body-sm text-pine-700 underline disabled:text-ink-500"
+              >
+                Save and finish later
+              </button>
+            )}
+            {step < STEPS.length - 1 ? (
+              <Button onClick={next} disabled={!stepValid || saving}>
+                Continue
+              </Button>
+            ) : (
+              <Button onClick={finish} loading={saving}>
+                Finish
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

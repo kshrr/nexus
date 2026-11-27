@@ -1,0 +1,40 @@
+/* Station look for the header on the landing and course pages. */
+.station-page header.nexus-public-header {
+  background: #fff;
+  border-bottom: 1px solid #dde5f0;
+  box-shadow: none;
+  font-family: 'Barlow', system-ui, sans-serif;
+  color: #0a2342;
+}
+.station-page header.nexus-public-header .public-wordmark {
+  font-family: 'Barlow', system-ui, sans-serif;
+  color: #0a2342;
+}
+.station-page header.nexus-public-header .public-wordmark > span:first-child {
+  background: #f26a21;
+}
+.station-page header.nexus-public-header .landing-button {
+  background: #0a2342;
+  color: #fff;
+}
+.station-page header.nexus-public-header .landing-button:hover {
+  background: #f26a21;
+}
+.station-page header.nexus-public-header .public-search-links,
+.station-page header.nexus-public-header .public-primary-nav.is-open {
+  background: #fff;
+}
+.station-page header.nexus-public-header .public-search-links a:hover {
+  background: #f3f6fb;
+}
+.station-page header.nexus-public-header :focus-visible {
+  outline-color: #f26a21;
+}
+.station-page .public-footer-invitation {
+  display: none;
+}
+
+
+.site-app-shell.station-page {
+  background: #fff;
+}

@@ -6,3 +6,5 @@ export { PageHeader } from './PageHeader';
 export { Footer } from './Footer';
 export { Wordmark } from './Wordmark';
 export { SignOutButton } from './SignOutButton';
+export { Breadcrumbs, BreadcrumbProvider } from './Breadcrumbs';
+export { useBreadcrumbLabel } from './breadcrumbContext';

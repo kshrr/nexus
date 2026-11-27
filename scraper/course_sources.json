@@ -6,20 +6,67 @@
       "study.um.edu.my": {"path": "/(?:undergraduate-faculties|programmes|page-faculty-foundation|diploma-faculty-centre|dip-faculty-of-(?:medicine|nursing)|universiti-malaya-centre-for-continuing-education|academy-of-islamic-studies-courses|malay-studies-courses|faculty-[A-Za-z0-9-]+|bachelors?-[A-Za-z0-9-]+|foundation-[A-Za-z0-9-]+|diploma-[A-Za-z0-9-]+)", "query": ""}
     }
   },
-  "unimap": {
-    "name": "Universiti Malaysia Perlis", "state": "Perlis",
-    "levels": ["diploma", "degree"], "session": "2026/2027",
+  "unisza": {
+    "name": "Universiti Sultan Zainal Abidin", "state": "Terengganu",
+    "levels": ["foundation", "diploma", "degree"], "session": "2026/2027",
     "destinations": {
-      "www.unimap.edu.my": {"path": "/(?:index\\.php/(?:en|ms)/(?:syarat-kemasukan|kemasukan/pra-siswazah)|images/kemasukan/[^?#]+\\.pdf)", "query": ""},
-      "admission.unimap.edu.my": {"path": "/(?:|index\\.php|local\\.php|international\\.php|programme\\.php|images/[^?#]+\\.pdf)", "query": "id"}
+      "www.unisza.edu.my": {"path": "/(?:wp-sitemap-posts-our-faculties-1\\.xml|our-faculties/(?:bachelor-|b-tech-|diploma-|foundation-)[a-z0-9-]+)", "query": ""}
     }
   },
-  "usim": {
-    "name": "Universiti Sains Islam Malaysia", "state": "Negeri Sembilan",
-    "levels": ["foundation", "degree"], "session": "2026/2027",
+  "utem": {
+    "name": "Universiti Teknikal Malaysia Melaka", "state": "Melaka",
+    "levels": ["diploma", "degree"], "session": "2026/2027",
     "destinations": {
-      "admission.usim.edu.my": {"path": "/(?:academic-programmes|tamhidi|undergraduate|download)/?|/wp-content/uploads/[0-9]{4}/[0-9]{2}/[^?#]+\\.pdf", "query": "pid"},
-      "tamhidi.usim.edu.my": {"path": "/wp-content/uploads/[0-9]{4}/[0-9]{2}/[^?#]+\\.pdf", "query": ""}
+      "www.utem.edu.my": {"path": "/en/(?:undergraduate\\.html|downloads/kemasukan/[0-9]+-sesi-[0-9]{8}-[a-z0-9-]+(?:/file)?\\.html)", "query": ""}
+    }
+  },
+  "mmu": {
+    "name": "Multimedia University", "state": "Selangor",
+    "levels": ["foundation", "diploma", "degree"], "session": "2026/2027",
+    "destinations": {
+      "www.mmu.edu.my": {"path": "/(?:courses-sitemap\\.xml|(?:programmes-by-faculty-all/programmes-by-faculty-[a-z]+|pogrammes-all/programmes-new)/(?:bachelor|diploma|foundation)-[a-z0-9-]+)", "query": ""}
+    }
+  },
+  "utm": {
+    "name": "Universiti Teknologi Malaysia", "state": "Johor",
+    "levels": ["degree"], "session": "2026/2027",
+    "destinations": {
+      "admission.utm.my": {"path": "/(?:entry-requirements-ug-malaysian|wp-sitemap-posts-programmes-1\\.xml|programmes/bachelor-[a-z0-9-]+|wp-content/uploads/sites/461/[0-9]{4}/[0-9]{2}/[A-Za-z0-9_-]*SYARAT-KEMASUKAN[A-Za-z0-9_-]*\\.pdf)", "query": ""}
+    }
+  },
+  "taylors": {
+    "name": "Taylor's University", "state": "Selangor",
+    "levels": ["diploma", "degree"], "session": "2026/2027",
+    "destinations": {
+      "university.taylors.edu.my": {"path": "/(?:en\\.sitemap\\.xml|en/study/explore-all-programmes/[a-z0-9-]+/undergraduate/(?:bachelor|diploma)-[a-z0-9-]+\\.html)", "query": ""}
+    }
+  },
+  "taylors_college": {
+    "name": "Taylor's College", "state": "Selangor",
+    "levels": ["foundation", "diploma"], "session": "2026/2027",
+    "destinations": {
+      "college.taylors.edu.my": {"path": "/(?:en\\.sitemap\\.xml|en/study/explore-all-programmes/school-of-(?:pre-university|diploma)-studies/(?:foundation|diploma)/(?:foundation|diploma)-[a-z0-9-]+\\.html)", "query": ""}
+    }
+  },
+  "inti": {
+    "name": "INTI International University & Colleges", "state": "Negeri Sembilan",
+    "levels": ["foundation", "diploma", "degree"], "session": "2026/2027",
+    "destinations": {
+      "newinti.edu.my": {"path": "/(?:wp-sitemap-posts-product-1\\.xml|programme/(?:foundation|diploma|bachelor)[a-z0-9-]*)", "query": ""}
+    }
+  },
+  "umpsa": {
+    "name": "Universiti Malaysia Pahang Al-Sultan Abdullah", "state": "Pahang",
+    "levels": ["diploma", "degree"], "session": "2026/2027",
+    "destinations": {
+      "admission.umpsa.edu.my": {"path": "/(?:ug-programme|undergraduate-study/[a-z0-9-]+/[a-z0-9-]+)", "query": ""}
+    }
+  },
+  "sunway_college": {
+    "name": "Sunway College", "state": "Selangor",
+    "levels": ["foundation", "diploma"], "session": "2026/2027",
+    "destinations": {
+      "sunwaycollege.edu.my": {"path": "/(?:sitemap\\.xml|programmes/diploma-studies/[a-z0-9-]+/diploma-[a-z0-9-]+|programmes/pre-university-foundation/(?:sunway-foundation-[a-z0-9-]+|monash-university-foundation-year))", "query": ""}
     }
   }
 }

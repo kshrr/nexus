@@ -25,31 +25,91 @@ Reconnaissance performed 9 September 2026 (all against the live sites):
               khazanah-global-...        Scholarship DETAIL page is server-
                                          rendered — that one page is the target. REGISTERED.
 
-    bnm       bnm.gov.my/careers/        Browser and curl get HTTP 200 and the
-              scholarships               content IS server-rendered, but the
-                                         site's WAF returns HTTP 403 to Python's
-                                         HTTP client — the block is on the TLS
-                                         fingerprint, not the User-Agent or
-                                         rate. Getting past it needs TLS-
-                                         handshake spoofing, which the brief
-                                         rules out as bypassing anti-bot
-                                         protection. NOT scraped.
+    bnm       bnm.gov.my/careers/        Blocked by its WAF (TLS fingerprint) on
+              scholarships               9 Sep 2026 and left unscraped; since
+                                         re-inspected 22 Nov 2026, it serves the
+                                         ordinary Fetcher HTTP 200 with nothing
+                                         bypassed. Kijang pre-university and
+                                         bachelor's scholarships.   REGISTERED.
 
-    mara      biasiswa.mara.gov.my       DNS DOES NOT RESOLVE (verified again
-                                         9 Sep 2026). mara.gov.my itself is up
-                                         but its sponsorship pages are a moving
-                                         target with no stable index; deferred
-                                         rather than a blind parser.
+    mara      mara.gov.my/en/index/      biasiswa.mara.gov.my still does not
+              education/education-       resolve, but the main site (WordPress,
+              financing/                 robots permits content) now has a stable
+                                         financing index in its sitemap. YTP, TESP
+                                         and IPMa extracted; post-graduate and the
+                                         advance loan skipped. Re-inspected
+                                         22 Nov 2026.               REGISTERED.
 
-The BNM and MARA omissions are REPORTED rather than papered over. See
-scraper/README.md and scraper/SECURITY.md.
+    ytm       ytm.tm.com.my/             yayasantm.org.my is gone; tm.com.my
+              scholarships-future-leader redirects here. Drupal, robots permits
+                                         content; FAQ accordion is server-
+                                         rendered. Future Leaders extracted; the
+                                         Form 4 Young Leaders award skipped.
+                                         Inspected 22 Nov 2026.     REGISTERED.
+
+    ytn       ytn.tnb.com.my/            ytn.org.my is gone. WordPress (Divi),
+              biasiswa-prime-scholarship robots permits content with Crawl-delay
+                                         10 (honoured). TNB PRIME and SHINE: five
+                                         records by programme and stage; enrolled-
+                                         student top-ups and the stale 2019/2020
+                                         Sabah/Sarawak pre-intake skipped.
+                                         Inspected 22 Nov 2026.     REGISTERED.
+
+    yayasan_  yayasansarawak.org.my/en/  WordPress, robots permits content;
+    sarawak   biasiswa/ and /en/pinjaman/ collapse panels are server-rendered.
+                                         Eight post-SPM scholarships, grants and
+                                         loans; school aid (BTYS) and the i-GPS
+                                         flight subsidy skipped. Inspected
+                                         22 Nov 2026.               REGISTERED.
+
+    yayasan_  ptps.sabah.gov.my          ysnet.org.my redirects to a group site
+    sabah     sponsor.php (Yayasan       with prose only; applications run
+              Sabah)                     through PTPS, whose sponsor page links
+                                         the year's advertisement PDF (text
+                                         layer, decoded in the bounded PDF
+                                         worker). 24 programmes; Master's/PhD
+                                         and post-graduate diploma skipped.
+                                         Inspected 22 Nov 2026.     REGISTERED.
+
+    ptptn     ptptn.gov.my/pinjaman-     Elementor toggles server-rendered; the
+              pendidikan/                education loan, its conditions and the
+                                         annual amount table. 23 Nov 2026. REGISTERED.
+
+    yayasan_  yayasanselangor.org.my/    Current loan offer (updated 19 Nov 2026);
+    selangor  pinjaman-pelajaran-2/      the RKPYS school programme is skipped.
+                                         23 Nov 2026.              REGISTERED.
+
+    maybank   maybankfoundation.com/     Maybank Group Scholarship Programme:
+              …/maybank-groups-          Malaysia and UK routes in Elementor tabs;
+              scholarship-programme/     Google Form apply link not stored.
+                                         23 Nov 2026.              REGISTERED.
+
+    peneraju  yayasanpeneraju.com.my,    robots allows all and pages are server-
+              peneraju.org               rendered, but there is no post-SPM
+                                         scholarship any more: the only offering is
+                                         course financing (RM5k-RM150k packages) for
+                                         certification courses whose minimum entry
+                                         is a Diploma or Degree. Re-inspected
+                                         22 Nov 2026.               NOT scraped.
+
+The Yayasan Peneraju omission is REPORTED rather than papered over. See scraper/README.md
+and scraper/SECURITY.md.
 """
 
 from __future__ import annotations
 
 from .parsers.base import BaseParser
+from .parsers.bnm import BnmParser
+from .parsers.maybank import MaybankParser
+from .parsers.ptptn import PtptnParser
+from .parsers.yayasan_selangor import YayasanSelangorParser
 from .parsers.jpa import JpaParser
 from .parsers.khazanah import KhazanahParser
+from .parsers.mara import MaraParser
+from .parsers.ytm import YtmParser
+from .parsers.ytn import YtnParser
+from .parsers.yayasan_sarawak import YayasanSarawakParser
+from .parsers.yayasan_sabah import YayasanSabahParser
 from .parsers.petronas import PetronasParser
 from .parsers.ysd import YsdParser
 
@@ -59,21 +119,25 @@ REGISTRY: dict[str, type[BaseParser]] = {
     PetronasParser.source_id: PetronasParser,
     YsdParser.source_id: YsdParser,
     KhazanahParser.source_id: KhazanahParser,
+    MaraParser.source_id: MaraParser,
+    YtmParser.source_id: YtmParser,
+    YtnParser.source_id: YtnParser,
+    YayasanSarawakParser.source_id: YayasanSarawakParser,
+    YayasanSabahParser.source_id: YayasanSabahParser,
+    BnmParser.source_id: BnmParser,
+    PtptnParser.source_id: PtptnParser,
+    YayasanSelangorParser.source_id: YayasanSelangorParser,
+    MaybankParser.source_id: MaybankParser,
 }
 
 #: Inspected but not scraped, with the honest reason. Surfaced by --list-sources
 #: so the gap is visible in the tool itself, not only in a document.
 UNAVAILABLE: dict[str, str] = {
-    "bnm": (
-        "bnm.gov.my/careers/scholarships is served to a browser and to curl but "
-        "its WAF returns HTTP 403 to Python's HTTP client, keyed on the TLS "
-        "fingerprint. Bypassing that means spoofing the TLS handshake, which the "
-        "brief rules out as defeating anti-bot protection."
-    ),
-    "mara": (
-        "biasiswa.mara.gov.my does not resolve in DNS (verified 9 Sep 2026). "
-        "mara.gov.my is reachable but its sponsorship information has no stable, "
-        "enumerable index — a parser cannot be pinned to it yet."
+    "peneraju": (
+        "Yayasan Peneraju (yayasanpeneraju.com.my, peneraju.org) no longer runs "
+        "post-SPM scholarships; its only offering is course financing for "
+        "certification courses that require a Diploma or Degree to enter "
+        "(inspected 22 Nov 2026). Nothing to show a post-SPM student."
     ),
 }
 
@@ -101,5 +165,8 @@ def parser_for_url(url: str) -> BaseParser | None:
     parts=urlsplit(url)
     for cls in REGISTRY.values():
         parser=cls(); prefix=urlsplit(parser.path_prefix)
+        # A prefix with a query (one sponsor on a shared PTPS sponsor.php) only
+        # claims that exact query, not every page on the same path.
+        if prefix.query and parts.query!=prefix.query: continue
         if parts.hostname==prefix.hostname and (parts.path.startswith(prefix.path) or url==parser.index_url): return parser
     return None

@@ -3,6 +3,7 @@ import { Routes, Route } from 'react-router-dom';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { AppShell } from '@/components/layout/AppShell';
 import { AdminShell } from '@/components/layout/AdminShell';
+import { BreadcrumbProvider } from '@/components/layout/Breadcrumbs';
 import {
   ProtectedRoute,
   PublicOnlyRoute,
@@ -49,135 +50,137 @@ import AdminAudit from '@/pages/admin/AdminAudit';
  */
 export function AppRoutes() {
   return (
-    <Routes>
-      {/* ---------- Public + auth ---------- */}
-      <Route element={<PublicLayout />}>
-        <Route index element={<Landing />} />
-        <Route path="privacy" element={<Privacy />} />
-        <Route path="scholarships" element={<ScholarshipList />} />
-        <Route path="scholarships/:id" element={<ScholarshipDetail />} />
-        <Route path="courses" element={<CourseList />} />
-        <Route path="courses/:id" element={<CourseDetail />} />
-        <Route path="careers" element={<Careers />} />
-        <Route path="careers/:id" element={<CareerDetail />} />
+    <BreadcrumbProvider>
+      <Routes>
+        {/* ---------- Public + auth ---------- */}
+        <Route element={<PublicLayout />}>
+          <Route index element={<Landing />} />
+          <Route path="privacy" element={<Privacy />} />
+          <Route path="scholarships" element={<ScholarshipList />} />
+          <Route path="scholarships/:id" element={<ScholarshipDetail />} />
+          <Route path="courses" element={<CourseList />} />
+          <Route path="courses/:id" element={<CourseDetail />} />
+          <Route path="careers" element={<Careers />} />
+          <Route path="careers/:id" element={<CareerDetail />} />
 
-        <Route
-          path="login"
-          element={
-            <PublicOnlyRoute>
-              <Login />
-            </PublicOnlyRoute>
-          }
-        />
-        <Route
-          path="register"
-          element={
-            <PublicOnlyRoute>
-              <Register />
-            </PublicOnlyRoute>
-          }
-        />
-        <Route path="verify" element={<Verify />} />
-        <Route path="reset-password" element={<ResetPassword />} />
-      </Route>
+          <Route
+            path="login"
+            element={
+              <PublicOnlyRoute>
+                <Login />
+              </PublicOnlyRoute>
+            }
+          />
+          <Route
+            path="register"
+            element={
+              <PublicOnlyRoute>
+                <Register />
+              </PublicOnlyRoute>
+            }
+          />
+          <Route path="verify" element={<Verify />} />
+          <Route path="reset-password" element={<ResetPassword />} />
+        </Route>
 
-      {/* ---------- Student (session required) ---------- */}
-      <Route
-        element={
-          <ProtectedRoute>
-            <AppShell />
-          </ProtectedRoute>
-        }
-      >
-        {/* Pre-profile: session only, no ProfileGate */}
-        <Route path="profile-setup" element={<ProfileSetup />} />
+        {/* ---------- Student (session required) ---------- */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <AppShell />
+            </ProtectedRoute>
+          }
+        >
+          {/* Pre-profile: session only, no ProfileGate */}
+          <Route path="profile-setup" element={<ProfileSetup />} />
 
-        {/* Profiled area — each wrapped in <ProfileGate> */}
-        <Route
-          path="dashboard"
-          element={
-            <ProfileGate>
-              <Dashboard />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="find-your-path"
-          element={
-            <ProfileGate>
-              <FindYourPath />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="find-your-path/assessment"
-          element={
-            <ProfileGate>
-              <RiasecAssessment />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="find-your-path/results"
-          element={
-            <ProfileGate>
-              <RiasecResults />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="find-your-path/academic"
-          element={
-            <ProfileGate>
-              <AcademicAnalysis />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="recommendations"
-          element={
-            <ProfileGate>
-              <Recommendations />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="saved"
-          element={
-            <ProfileGate>
-              <SavedItems />
-            </ProfileGate>
-          }
-        />
-        <Route
-          path="profile"
-          element={
-            <ProfileGate>
-              <Profile />
-            </ProfileGate>
-          }
-        />
-      </Route>
+          {/* Profiled area — each wrapped in <ProfileGate> */}
+          <Route
+            path="dashboard"
+            element={
+              <ProfileGate>
+                <Dashboard />
+              </ProfileGate>
+            }
+          />
+          <Route
+            path="find-your-path"
+            element={
+              <ProfileGate>
+                <FindYourPath />
+              </ProfileGate>
+            }
+          />
+          <Route
+            path="find-your-path/assessment"
+            element={
+              <ProfileGate>
+                <RiasecAssessment />
+              </ProfileGate>
+            }
+          />
+          <Route
+            path="find-your-path/results"
+            element={
+              <ProfileGate>
+                <RiasecResults />
+              </ProfileGate>
+            }
+          />
+          <Route
+            path="find-your-path/academic"
+            element={
+              <ProfileGate>
+                <AcademicAnalysis />
+              </ProfileGate>
+            }
+          />
+          <Route
+            path="recommendations"
+            element={
+              <ProfileGate>
+                <Recommendations />
+              </ProfileGate>
+            }
+          />
+          <Route
+            path="saved"
+            element={
+              <ProfileGate>
+                <SavedItems />
+              </ProfileGate>
+            }
+          />
+          <Route
+            path="profile"
+            element={
+              <ProfileGate>
+                <Profile />
+              </ProfileGate>
+            }
+          />
+        </Route>
 
-      {/* ---------- Admin (role = admin) ---------- */}
-      <Route
-        element={
-          <AdminRoute>
-            <AdminShell />
-          </AdminRoute>
-        }
-      >
-        <Route path="admin" element={<AdminHome />} />
-        <Route path="admin/scholarships" element={<AdminScholarships />} />
-        <Route path="admin/scholarship-discovery" element={<AdminScholarshipDiscovery />} />
-        <Route path="admin/courses" element={<AdminDataManagement />} />
-        <Route path="admin/crawler" element={<AdminCrawler />} />
-        <Route path="admin/updates" element={<AdminManualUpdates />} />
-        <Route path="admin/audit" element={<AdminAudit />} />
-      </Route>
+        {/* ---------- Admin (role = admin) ---------- */}
+        <Route
+          element={
+            <AdminRoute>
+              <AdminShell />
+            </AdminRoute>
+          }
+        >
+          <Route path="admin" element={<AdminHome />} />
+          <Route path="admin/scholarships" element={<AdminScholarships />} />
+          <Route path="admin/scholarship-discovery" element={<AdminScholarshipDiscovery />} />
+          <Route path="admin/courses" element={<AdminDataManagement />} />
+          <Route path="admin/crawler" element={<AdminCrawler />} />
+          <Route path="admin/updates" element={<AdminManualUpdates />} />
+          <Route path="admin/audit" element={<AdminAudit />} />
+        </Route>
 
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BreadcrumbProvider>
   );
 }
 

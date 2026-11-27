@@ -1,5 +1,19 @@
 import type { CallerContext } from './auth.ts';
 import { fail, ok, preflight, corsHeaders } from './http.ts';
+/** University course sources with an adapter (scraper/course_sources.json). "All"
+ * dispatches only those also registered in the database. */
+export const COURSE_SOURCES = [
+  'um',
+  'unisza',
+  'utem',
+  'mmu',
+  'utm',
+  'taylors',
+  'taylors_college',
+  'inti',
+  'umpsa',
+  'sunway_college',
+];
 interface Dependencies {
   getCaller: (req: Request) => Promise<CallerContext | null>;
   fetch: typeof fetch;
@@ -28,7 +42,7 @@ export async function handleCourseCrawlDispatch(
       const payload = text ? JSON.parse(text) : {};
       if (!payload || Array.isArray(payload) || typeof payload !== 'object') throw new Error();
       source = payload.source ?? 'um';
-      if (!['um', 'unimap', 'usim', 'all'].includes(source)) throw new Error();
+      if (source !== 'all' && !COURSE_SOURCES.includes(source)) throw new Error();
     } catch {
       return fail(400, 'INVALID_SOURCE', 'Choose a supported university source.');
     }
@@ -43,9 +57,7 @@ export async function handleCourseCrawlDispatch(
     if (registry.error) throw registry.error;
     const registered = (registry.data ?? []).map((row: { source: string }) => row.source);
     const choices =
-      source === 'all'
-        ? ['um', 'unimap', 'usim'].filter((key) => registered.includes(key))
-        : [source];
+      source === 'all' ? COURSE_SOURCES.filter((key) => registered.includes(key)) : [source];
     if (!choices.length || choices.some((key) => !registered.includes(key)))
       return fail(400, 'INVALID_SOURCE', 'Choose a supported university source.');
     const { token, repo, ref, workflow } = deps.config;
@@ -122,14 +134,12 @@ export async function handleCourseCrawlDispatch(
           run_hint: 'Course refresh queued. Results appear after the course crawler finishes.',
         });
         try {
-          const audit = await client
-            .from('audit_log')
-            .insert({
-              actor_user_id: userId,
-              action: 'course_crawler.trigger',
-              target_table: 'course_crawl_runs',
-              metadata: { request_id, source: selected, ref },
-            });
+          const audit = await client.from('audit_log').insert({
+            actor_user_id: userId,
+            action: 'course_crawler.trigger',
+            target_table: 'course_crawl_runs',
+            metadata: { request_id, source: selected, ref },
+          });
           if (audit.error) console.error('[course-sync] audit insert failed');
         } catch {
           console.error('[course-sync] audit insert failed');

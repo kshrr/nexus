@@ -1,20 +1,30 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Landing } from './Landing';
 
 const catalogue = vi.hoisted(() => ({ result: null }));
+const counts = vi.hoisted(() => ({
+  courses: 487,
+  universities: 10,
+  scholarships: 26,
+  careers: 20,
+}));
 let observedSections = [];
 vi.mock('@/config/env', () => ({ config: { isConfigured: true } }));
 vi.mock('@/lib/supabase', () => ({
   supabase: {
-    from: () => ({
-      select: () => ({ eq: () => ({ order: async () => catalogue.result }) }),
+    from: (table) => ({
+      select: (_columns, options) =>
+        options?.head
+          ? { eq: async () => ({ count: counts[table] ?? 0 }) }
+          : { eq: () => ({ order: async () => catalogue.result }) },
     }),
   },
 }));
 
 beforeEach(() => {
+  window.scrollTo = vi.fn();
   observedSections = [];
   catalogue.result = {
     data: [
@@ -41,39 +51,54 @@ beforeEach(() => {
   );
 });
 
-describe('Landing opening journey', () => {
-  it('introduces students and their common decisions before the feature showcase', async () => {
+describe('Landing station page', () => {
+  it('opens with the promise, the departure board and the university logos', async () => {
     showLanding();
     expect(
-      screen.getByRole('img', { name: /students exploring their futures/i })
+      screen.getByRole('heading', { level: 1, name: /work out what comes after/i })
     ).toBeInTheDocument();
-    const challenges = screen.getByRole('region', { name: /so many choices/i });
-    expect(within(challenges).getByText(/which path fits me/i)).toBeInTheDocument();
-    expect(within(challenges).getByText(/where can i study/i)).toBeInTheDocument();
-    expect(within(challenges).getByText(/how can i afford it/i)).toBeInTheDocument();
-    await screen.findByText('Universiti Putra Malaysia');
+    const board = screen.getByRole('region', { name: /nexus departures/i });
+    for (const name of ['Interests', 'Academics', 'Courses', 'Careers', 'Scholarships']) {
+      expect(within(board).getByRole('link', { name: new RegExp(name, 'i') })).toBeInTheDocument();
+    }
+    const logos = screen.getByRole('region', { name: /universities on nexus/i });
+    expect(within(logos).getAllByRole('img', { name: /universiti malaya/i })).toHaveLength(1);
+    await explorerHas('Universiti Putra Malaysia');
   });
 
-  it('updates the laptop preview as the next feature enters the reading area', async () => {
+  it('shows live catalogue numbers and a slider of platform features', async () => {
     showLanding();
-    const journey = screen.getByRole('region', { name: /explore nexus features/i });
-    const preview = within(journey).getByRole('region', { name: /nexus feature preview/i });
-    expect(within(preview).getByText(/discover what drives you/i)).toBeInTheDocument();
+    const numbers = screen.getByRole('region', { name: /nexus in numbers/i });
+    expect(await within(numbers).findByText('487')).toBeInTheDocument();
+    expect(within(numbers).getByText('26')).toBeInTheDocument();
+    expect(within(numbers).getByText('36')).toBeInTheDocument();
+    const slider = screen.getByRole('region', { name: /platform features/i });
+    expect(within(slider).getByRole('heading', { name: /ask nexus/i })).toBeInTheDocument();
+    expect(within(slider).getByRole('heading', { name: /private/i })).toBeInTheDocument();
+    expect(screen.queryByText(/compare courses/i)).not.toBeInTheDocument();
+    await explorerHas('Universiti Putra Malaysia');
+  });
 
-    const academics = within(journey)
-      .getByRole('heading', { name: /connect your strengths/i })
-      .closest('article');
-    const observer = observedSections.find((item) => item.targets.includes(academics));
-    expect(observer).toBeDefined();
-    act(() =>
-      observer.callback([{ target: academics, isIntersecting: true, intersectionRatio: 1 }])
+  it('shows the product on a laptop and changes screen when a step is chosen', async () => {
+    showLanding();
+    const how = screen.getByRole('region', { name: /six steps/i });
+    const preview = within(how).getByRole('region', { name: /nexus preview/i });
+    expect(within(preview).getByText(/create your account/i)).toBeInTheDocument();
+    fireEvent.click(within(how).getByRole('button', { name: /discover your interests/i }));
+    expect(within(preview).getByText(/your interest profile/i)).toBeInTheDocument();
+    expect(within(preview).getByRole('img', { name: /interest radar chart/i })).toBeInTheDocument();
+    expect(within(how).getByRole('link', { name: /find my interests/i })).toHaveAttribute(
+      'href',
+      '/find-your-path/assessment'
     );
-
-    expect(within(preview).getByText(/see your academic picture/i)).toBeInTheDocument();
-    expect(within(preview).queryByText(/discover what drives you/i)).not.toBeInTheDocument();
-    await screen.findByText('Universiti Putra Malaysia');
+    await explorerHas('Universiti Putra Malaysia');
   });
 });
+
+function explorerHas(name) {
+  const explorer = screen.getByRole('region', { name: /a place for your next chapter/i });
+  return within(explorer).findByText(name);
+}
 
 function showLanding() {
   return render(
@@ -107,6 +132,19 @@ describe('Landing university explorer', () => {
     expect(within(explorer).getByText('Universiti Malaysia Sabah')).toBeInTheDocument();
     expect(within(explorer).queryByText('Universiti Putra Malaysia')).not.toBeInTheDocument();
     expect(within(explorer).getByRole('combobox')).toHaveValue('Sabah');
+  });
+
+  it('starts with a full-width map and links each university to its filtered courses', async () => {
+    showLanding();
+    const explorer = screen.getByRole('region', { name: /a place for your next chapter/i });
+    await within(explorer).findByText('Universiti Putra Malaysia');
+    const layout = explorer.querySelector('.st-map-layout');
+    expect(layout).not.toHaveClass('is-open');
+    fireEvent.click(within(explorer).getByRole('button', { name: 'Selangor', exact: true }));
+    expect(layout).toHaveClass('is-open');
+    expect(
+      within(explorer).getByRole('link', { name: /universiti putra malaysia/i })
+    ).toHaveAttribute('href', '/courses?university=upm');
   });
 
   it('supports the state selector and catalogue names without a federal territory prefix', async () => {

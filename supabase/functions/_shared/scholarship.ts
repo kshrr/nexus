@@ -52,6 +52,20 @@ export interface StudentEligibilityProfile {
   subjectPoints: Record<string, number>;
   /** Course fields from the student's current recommendations (§10.5). */
   recommendedFields: string[];
+  /**
+   * Self-declared, optional (migration 0036): 'malaysian' | 'non_malaysian' |
+   * null when the student has not answered. Nothing else about the student's
+   * identity is collected.
+   */
+  nationality?: string | null;
+  /**
+   * Self-declared, optional (migration 0039): year of birth and a monthly household income band.
+   * Used only for age and income limits. null = not answered.
+   */
+  birthYear?: number | null;
+  householdIncomeBand?: string | null;
+  /** The year used to turn a birth year into an age. Defaults to the current year; settable for tests. */
+  currentYear?: number;
 }
 
 export interface ChecklistItem {
@@ -73,17 +87,152 @@ export interface ScholarshipMatch {
 }
 
 /**
- * Criterion types the documented profile has no collection point for.
+ * Criterion types the profile has no collection point for.
  *
- * ui-specifications.md §9.1 states outright that date of birth, IC number and
- * nationality are NOT collected, so `age` and `citizenship` can never be
- * verified from stored data. They are reported as `unknown` — "we cannot check
- * this" — rather than guessed in either direction, which is the §10.6 rule.
- * See supabase/functions/README.md for the gap report.
+ * Date of birth and IC number are NOT collected (ui-specifications.md §9.1), so
+ * `age` can never be verified and is reported as `unknown` — "we cannot check
+ * this" — rather than guessed in either direction (§10.6). Nationality is now
+ * an optional, self-declared profile answer (migration 0036): `citizenship` is
+ * checked when the student has answered and is `unknown` otherwise.
  */
-const NO_DATA_SOURCE: CriterionType[] = ['citizenship', 'age'];
+const NO_DATA_SOURCE: CriterionType[] = ['age']; // checked only when its label gives a limit (inferRule)
+const ADD_NATIONALITY_HINT = 'Add your nationality in your profile to check this.';
+/** `alt: true` — the provider also accepts another exam (STAM, UEC, O-Level …). */
+const ALTERNATIVE_EXAM_HINT =
+  'Another exam can also meet this. Add your SPM results to check it against them.';
 
 const CANNOT_VERIFY_HINT = "Nexus can't check this. See the provider's page.";
+const ADD_BIRTH_YEAR_HINT = 'Add your year of birth in your profile to check this.';
+const ADD_INCOME_HINT = 'Add your household income range in your profile to check this.';
+const ADD_RESULTS_HINT = 'Add your SPM results in your profile to check this.';
+
+/**
+ * Household income bands (migration 0039), as (low, high] in RM per month. A limit is clearly met when
+ * the whole band sits at or under it, clearly missed when the whole band sits over it, and otherwise
+ * the band straddles the limit and Nexus cannot tell.
+ */
+const INCOME_BANDS: Record<string, [number, number]> = {
+  under_2500: [0, 2500],
+  '2500_5000': [2500, 5000],
+  '5000_7500': [5000, 7500],
+  '7500_10000': [7500, 10000],
+  '10000_15000': [10000, 15000],
+  over_15000: [15000, Number.POSITIVE_INFINITY],
+};
+
+/** SPM credits are grades A+ to C (points 3 and up on the §8.2 scale). */
+const CREDIT_POINTS = 3;
+
+export type InferredRule =
+  | { kind: 'age_max'; limit: number }
+  | { kind: 'income_max'; limit: number }
+  | { kind: 'spm_credits'; count: number }
+  | { kind: 'citizen_my' };
+
+const toNumber = (v: string): number => Number(v.replace(/,/g, ''));
+
+/**
+ * Many provider conditions arrive as plain text ("Aged 25 years or below.", "Total monthly gross
+ * household income of RM5,000 and below", "Obtained minimum three (3) credits in SPM") and are stored
+ * as `other`. These narrow patterns, in English and Malay, turn the common ones into a rule Nexus can
+ * check. Anything that does not match stays "can't check".
+ */
+export function inferRule(label: string): InferredRule | null {
+  const text = label.replace(/^(general|academic|eligibility)\s+condition:\s*/i, '').trim();
+
+  if (/^(malaysian(\s+citizen(ship)?)?|warganegara\s+malaysia)\.?$/i.test(text)) {
+    return { kind: 'citizen_my' };
+  }
+
+  const age =
+    text.match(
+      /\baged?\s+(\d{2})\s+(?:years?(?:\s+old)?\s+)?(?:and|or)\s+(?:below|under|younger)/i
+    ) ??
+    text.match(
+      /\b(?:below|under|not\s+(?:more\s+than|exceeding)|less\s+than|maximum\s+age\s+of)\s+(\d{2})\s+years?/i
+    ) ??
+    text.match(
+      /\b(?:berumur|umur)\s+(?:tidak\s+melebihi|bawah|kurang\s+daripada)\s+(\d{2})\s+tahun/i
+    );
+  if (age) return { kind: 'age_max', limit: Number(age[1]) };
+
+  if (/household|family|isi\s+rumah|keluarga|parents?|ibu\s+bapa/i.test(text)) {
+    const income =
+      text.match(/income[^.]{0,80}?RM\s?([\d,]+)(?:\.\d+)?\s*(?:and|or)\s+(?:below|under|less)/i) ??
+      text.match(/pendapatan[^.]{0,80}?tidak\s+melebihi\s+RM\s?([\d,]+)/i);
+    if (income) return { kind: 'income_max', limit: toNumber(income[1]) };
+  }
+
+  if (/\bSPM\b|sijil\s+pelajaran\s+malaysia/i.test(text)) {
+    const credits =
+      text.match(/\b(?:minimum|at\s+least)\s+(?:[a-z-]+\s+)?\(?(\d+)\)?\s+credits?\b/i) ??
+      text.match(/\bsekurang-kurangnya\s+(\d+)\s+kepujian/i);
+    if (credits && Number(credits[1]) >= 1)
+      return { kind: 'spm_credits', count: Number(credits[1]) };
+  }
+
+  return null;
+}
+
+function evaluateRule(
+  rule: InferredRule,
+  profile: StudentEligibilityProfile
+): { status: CriterionStatus; hint: string | null } {
+  switch (rule.kind) {
+    case 'citizen_my': {
+      if (!profile.nationality) return { status: 'unknown', hint: ADD_NATIONALITY_HINT };
+      return profile.nationality === 'malaysian'
+        ? { status: 'satisfied', hint: null }
+        : { status: 'unsatisfied', hint: 'This scholarship is for Malaysian citizens.' };
+    }
+
+    case 'age_max': {
+      if (!profile.birthYear) return { status: 'unknown', hint: ADD_BIRTH_YEAR_HINT };
+      const year = profile.currentYear ?? new Date().getFullYear();
+      // A year of birth leaves the age as one of two values, depending on the birthday.
+      const oldest = year - profile.birthYear;
+      const youngest = oldest - 1;
+      if (oldest <= rule.limit) return { status: 'satisfied', hint: null };
+      if (youngest > rule.limit) {
+        return { status: 'unsatisfied', hint: `The age limit is ${rule.limit} years.` };
+      }
+      return {
+        status: 'unknown',
+        hint: 'Your year of birth is too close to the limit to tell. See the provider’s page.',
+      };
+    }
+
+    case 'income_max': {
+      if (!profile.householdIncomeBand) return { status: 'unknown', hint: ADD_INCOME_HINT };
+      const band = INCOME_BANDS[profile.householdIncomeBand];
+      if (!band) return { status: 'unknown', hint: ADD_INCOME_HINT };
+      const [low, high] = band;
+      if (high <= rule.limit) return { status: 'satisfied', hint: null };
+      if (low >= rule.limit) {
+        return {
+          status: 'unsatisfied',
+          hint: `The household income limit is RM${rule.limit.toLocaleString('en-MY')} a month.`,
+        };
+      }
+      return {
+        status: 'unknown',
+        hint: 'Your income range spans the limit, so Nexus can’t tell. See the provider’s page.',
+      };
+    }
+
+    case 'spm_credits': {
+      const points = Object.values(profile.subjectPoints);
+      if (points.length === 0) return { status: 'unknown', hint: ADD_RESULTS_HINT };
+      const credits = points.filter((p) => p >= CREDIT_POINTS).length;
+      return credits >= rule.count
+        ? { status: 'satisfied', hint: null }
+        : {
+            status: 'unsatisfied',
+            hint: `From the subjects you’ve added you have ${credits} of the ${rule.count} credits needed. Add any missing SPM results in your profile.`,
+          };
+    }
+  }
+}
 
 const asString = (v: unknown): string => (typeof v === 'string' ? v : '');
 const asArray = (v: unknown): unknown[] => (Array.isArray(v) ? v : [v]);
@@ -119,6 +268,16 @@ export function evaluateCriterion(
   criterion: Criterion,
   profile: StudentEligibilityProfile
 ): { status: CriterionStatus; hint: string | null } {
+  // Plain-text conditions Nexus can now read: age, household income, SPM credits, citizenship.
+  // (§10.5 still applies to everything else: marked not checkable -> unknown.)
+  if (
+    (!criterion.is_checkable || NO_DATA_SOURCE.includes(criterion.criterion_type)) &&
+    ['other', 'age', 'citizenship'].includes(criterion.criterion_type)
+  ) {
+    const rule = inferRule(criterion.label);
+    if (rule) return evaluateRule(rule, profile);
+  }
+
   // §10.5 — the admin has marked this as something Nexus cannot verify.
   if (!criterion.is_checkable) {
     return { status: 'unknown', hint: CANNOT_VERIFY_HINT };
@@ -129,6 +288,19 @@ export function evaluateCriterion(
   }
 
   switch (criterion.criterion_type) {
+    case 'citizenship': {
+      // value 'MY' = Malaysian citizen. An unanswered question is unknown, not
+      // a failure: the student chose not to say, or has not got to it yet.
+      if (!profile.nationality) return { status: 'unknown', hint: ADD_NATIONALITY_HINT };
+      const wanted = lower(criterion.value);
+      if (wanted !== 'my' && wanted !== 'malaysian') {
+        return { status: 'unknown', hint: CANNOT_VERIFY_HINT };
+      }
+      return profile.nationality === 'malaysian'
+        ? { status: 'satisfied', hint: null }
+        : { status: 'unsatisfied', hint: 'This scholarship is for Malaysian citizens.' };
+    }
+
     case 'education_level': {
       if (!profile.educationLevel) {
         return { status: 'unsatisfied', hint: 'Set your education level in your profile.' };
@@ -159,8 +331,11 @@ export function evaluateCriterion(
     }
 
     case 'subject_grade': {
-      // value: { subject: 'MATH', grade: 'B' }  (grade may also be a point value)
-      const spec = (criterion.value ?? {}) as { subject?: string; grade?: unknown };
+      // value: { subject: 'MATH', grade: 'B', alt?: true }  (grade may also be a point value)
+      const spec = (criterion.value ?? {}) as { subject?: string; grade?: unknown; alt?: unknown };
+      if (spec.alt === true && Object.keys(profile.subjectPoints).length === 0) {
+        return { status: 'unknown', hint: ALTERNATIVE_EXAM_HINT };
+      }
       const subject = asString(spec.subject).toUpperCase();
       const threshold = toPoints(spec.grade);
       if (!subject || threshold === null) {
@@ -180,7 +355,28 @@ export function evaluateCriterion(
     }
 
     case 'min_grade': {
-      // Minimum average across every subject the student has recorded.
+      // Two value shapes:
+      //   { count: 8, grade: 'A' } -> at least 8 subjects at grade A or better
+      //   'B' / 5                  -> minimum average across recorded subjects
+      const spec = criterion.value as { count?: unknown; grade?: unknown; alt?: unknown } | null;
+      if (spec && typeof spec === 'object' && !Array.isArray(spec) && 'count' in spec) {
+        if (spec.alt === true && Object.keys(profile.subjectPoints).length === 0) {
+          return { status: 'unknown', hint: ALTERNATIVE_EXAM_HINT };
+        }
+        const count = Number(spec.count);
+        const floor = toPoints(spec.grade);
+        if (!Number.isInteger(count) || count < 1 || floor === null) {
+          return { status: 'unknown', hint: CANNOT_VERIFY_HINT };
+        }
+        const points = Object.values(profile.subjectPoints);
+        if (points.length === 0) {
+          return { status: 'unsatisfied', hint: "You haven't added any exam results yet." };
+        }
+        const reached = points.filter((p) => p >= floor).length;
+        return reached >= count
+          ? { status: 'satisfied', hint: null }
+          : { status: 'unsatisfied', hint: `You have ${reached} of the ${count} subjects needed.` };
+      }
       const threshold = toPoints(criterion.value);
       if (threshold === null) return { status: 'unknown', hint: CANNOT_VERIFY_HINT };
       const points = Object.values(profile.subjectPoints);

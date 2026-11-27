@@ -274,6 +274,9 @@ class SupabaseClient:
                 yield row
             if len(rows)<100: return
 
+    def auto_publish(self,id):
+        return self.rpc('scraper_auto_publish_discovery',{'p_id':id})
+
     def monitor(self,id,candidate):
         return self.rpc('scraper_monitor_discovery',{'p_id':id,'p_candidate':candidate.to_payload()})
 

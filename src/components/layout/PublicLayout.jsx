@@ -1,8 +1,10 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { PublicHeader } from './PublicHeader';
 import { Footer } from './Footer';
+import { Breadcrumbs } from './Breadcrumbs';
 import { ChatLauncher } from '@/components/chat/ChatLauncher';
 import '@/styles/landing.css';
+import '@/styles/station-chrome.css';
 import '@/styles/course-catalogue.css';
 
 /** Sign-in flow screens: the visitor is already signing in, so no chat button. */
@@ -19,7 +21,7 @@ export function PublicLayout() {
   const { pathname } = useLocation();
   return (
     <div
-      className={`nexus-public-page flex min-h-screen flex-col bg-surface${pathname === '/' ? ' rail-public-page' : ''}${pathname === '/courses' || pathname.startsWith('/courses/') ? ' course-public-page' : ''}${pathname === '/careers' || pathname.startsWith('/careers/') ? ' career-public-page' : ''}`}
+      className={`nexus-public-page flex min-h-screen flex-col bg-surface${pathname === '/' || pathname === '/courses' || pathname.startsWith('/courses/') || AUTH_PATHS.has(pathname) ? ' station-page' : ''}${pathname === '/careers' || pathname.startsWith('/careers/') ? ' career-public-page' : ''}`}
     >
       <a
         href="#main"
@@ -28,6 +30,7 @@ export function PublicLayout() {
         Skip to content
       </a>
       <PublicHeader />
+      {!pathname.startsWith('/courses') && <Breadcrumbs />}
       <main id="main" className="flex-1">
         <Outlet />
       </main>

@@ -3,12 +3,13 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { beforeEach, expect, it, vi } from 'vitest';
 import ScholarshipDetail from './ScholarshipDetail';
 
-const data = vi.hoisted(() => ({ authenticated: true, record: null, saveError: null }));
+const data = vi.hoisted(() => ({ authenticated: true, record: null, saveError: null, documents: [] }));
 vi.mock('@/context/useAuth', () => ({ useAuth: () => ({ isAuthenticated: data.authenticated }) }));
 vi.mock('@/hooks/useScholarships', () => ({
   useScholarship: () => ({
     scholarship: data.record,
     criteria: [{ id: 'grade', label: 'Minimum grade B', is_checkable: true }],
+    documents: data.documents,
     loading: false,
     error: null,
     reload: () => {},
@@ -36,6 +37,7 @@ vi.mock('@/hooks/useSavedItems', () => ({
 beforeEach(() => {
   data.authenticated = true;
   data.saveError = null;
+  data.documents = [];
   data.record = {
     id: 'rail-fund',
     name: 'Future Engineers Scholarship',
@@ -121,4 +123,29 @@ it('reports an unsuccessful bookmark action instead of silently ignoring it', as
   await waitFor(() =>
     expect(screen.getByRole('alert')).toHaveTextContent('Connection unavailable')
   );
+});
+
+it('links official requirement PDFs from the eligibility panel, opening in a new tab', () => {
+  data.documents = [
+    {
+      label: 'Universiti-universiti yang diluluskan (PDF)',
+      url: 'https://www.bnm.gov.my/documents/20124/1514833/Approved_Universities_for_Academic_Year_2026.pdf',
+    },
+  ];
+  show();
+  fireEvent.click(screen.getByRole('tab', { name: 'Eligibility' }));
+  const panel = screen.getByRole('tabpanel', { name: 'Eligibility' });
+  expect(within(panel).getByText('Requirement documents')).toBeInTheDocument();
+  const link = within(panel).getByRole('link', { name: /universiti-universiti yang diluluskan/i });
+  expect(link).toHaveAttribute('href', data.documents[0].url);
+  expect(link).toHaveAttribute('target', '_blank');
+  expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  expect(link).toHaveTextContent('www.bnm.gov.my');
+  expect(link).toHaveAccessibleName(/opens in a new tab/i);
+});
+
+it('shows no requirement documents block when there are none', () => {
+  show();
+  fireEvent.click(screen.getByRole('tab', { name: 'Eligibility' }));
+  expect(screen.queryByText('Requirement documents')).not.toBeInTheDocument();
 });

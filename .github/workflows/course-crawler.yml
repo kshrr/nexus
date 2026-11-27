@@ -1,0 +1,63 @@
+name: university-course-sync
+run-name: University course catalogue (${{ github.event_name == 'schedule' && 'monthly' || inputs.source }})
+on:
+  schedule:
+    # 19:30 UTC on the 1st = 03:30 Malaysia/Singapore time on the 2nd of each month.
+    - cron: '30 19 1 * *'
+  workflow_dispatch:
+    inputs:
+      source:
+        description: 'Registered university source'
+        type: choice
+        options: [um, unisza, utem, mmu, utm, taylors, taylors_college, inti, umpsa, sunway_college]
+        default: um
+        required: true
+      request_id:
+        description: 'Optional admin request UUID'
+        required: false
+      triggered_by:
+        description: 'manual or schedule'
+        default: manual
+      triggered_by_user:
+        description: 'Admin profile UUID'
+        required: false
+permissions:
+  contents: read
+jobs:
+  sync:
+    # Keep scheduled automatic imports in the private development repository.
+    if: github.event.repository.private == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      max-parallel: 2
+      matrix:
+        source: ${{ github.event_name == 'schedule' && fromJSON('["um","unisza","utem","mmu","utm","taylors","taylors_college","inti","umpsa","sunway_college"]') || fromJSON(format('["{0}"]', inputs.source)) }}
+    concurrency:
+      group: university-course-sync-${{ matrix.source }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scraper/requirements.txt
+      - name: Install scraper dependencies
+        run: python -m pip install -r scraper/requirements.txt
+      - name: Test the scraper
+        run: python -m pytest scraper/tests -q
+      - name: Sync official university courses
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          COURSE_SOURCE: ${{ matrix.source }}
+          REQUEST_ID: ${{ inputs.request_id }}
+          TRIGGERED_BY: ${{ github.event_name == 'schedule' && 'schedule' || 'manual' }}
+          TRIGGERED_BY_USER: ${{ inputs.triggered_by_user }}
+        run: |
+          ARGS=(--source "$COURSE_SOURCE" --triggered-by "$TRIGGERED_BY")
+          if [ -n "$REQUEST_ID" ]; then ARGS+=(--request-id "$REQUEST_ID"); fi
+          if [ -n "$TRIGGERED_BY_USER" ]; then ARGS+=(--triggered-by-user "$TRIGGERED_BY_USER"); fi
+          python -m scraper.courses "${ARGS[@]}"

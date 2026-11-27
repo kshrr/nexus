@@ -1,0 +1,74 @@
+/* Breadcrumbs: plain text trail at the top of a page, not a bar of its own. */
+.nexus-crumbs {
+  font-family: 'Barlow', system-ui, sans-serif;
+}
+.nexus-crumbs ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 0;
+  width: min(100% - 32px, 1200px);
+  margin: 0 auto;
+  padding: 16px 0 0;
+  list-style: none;
+}
+.nexus-crumbs li {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5d76;
+}
+.nexus-crumbs li + li::before {
+  content: '/';
+  margin: 0 9px;
+  color: #9fb0c8;
+}
+.nexus-crumbs a {
+  color: #4b5d76;
+  text-decoration: none;
+  text-underline-offset: 4px;
+}
+.nexus-crumbs a:hover {
+  color: #c2480a;
+  text-decoration: underline;
+}
+.nexus-crumbs a:focus-visible {
+  outline: 3px solid #f26a21;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.nexus-crumbs li > span {
+  max-width: min(46ch, 60vw);
+  overflow: hidden;
+  color: #0a2342;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* On a dark title section the trail sits inside it. */
+.nexus-crumbs.is-light ol {
+  width: 100%;
+  margin: 0;
+  padding: 0 0 18px;
+}
+.nexus-crumbs.is-light li,
+.nexus-crumbs.is-light a {
+  color: rgba(255, 255, 255, 0.72);
+}
+.nexus-crumbs.is-light li + li::before {
+  color: rgba(255, 255, 255, 0.38);
+}
+.nexus-crumbs.is-light a:hover {
+  color: #ffb98a;
+}
+.nexus-crumbs.is-light li > span {
+  color: #fff;
+}
+@media (min-width: 1280px) {
+  .nexus-crumbs:not(.is-light) ol {
+    width: min(100% - 80px, 1200px);
+  }
+}

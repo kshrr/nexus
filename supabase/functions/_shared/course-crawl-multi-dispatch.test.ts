@@ -21,7 +21,7 @@ function deps(failed = '') {
           resolve({
             data:
               table === 'course_source_registry'
-                ? [{ source: 'um' }, { source: 'unimap' }, { source: 'usim' }]
+                ? [{ source: 'um' }, { source: 'usim' }, { source: 'unisza' }, { source: 'utem' }]
                 : [],
             error: null,
           }),
@@ -44,25 +44,33 @@ function deps(failed = '') {
 }
 const request = (source: string) =>
   new Request('https://nexus.test/refresh', { method: 'POST', body: JSON.stringify({ source }) });
-it('dispatches all universities with independent UUIDs', async () => {
+it('dispatches all supported universities with independent UUIDs, skipping retired ones', async () => {
   const d = deps();
   const response = await handleCourseCrawlDispatch(request('all'), d);
   expect(response.status).toBe(200);
   const { data } = await response.json();
   expect(data.requests.filter((r: any) => r.dispatched)).toHaveLength(3);
-  expect(d.sent.map((r: any) => r.source)).toEqual(['um', 'unimap', 'usim']);
+  expect(d.sent.map((r: any) => r.source)).toEqual(['um', 'unisza', 'utem']);
   expect(new Set(d.sent.map((r: any) => r.request_id)).size).toBe(3);
 });
 it('retains accepted requests when one university dispatch fails', async () => {
-  const response = await handleCourseCrawlDispatch(request('all'), deps('unimap'));
+  const response = await handleCourseCrawlDispatch(request('all'), deps('unisza'));
   expect(response.status).toBe(200);
   const { data } = await response.json();
-  expect(data.requests.find((r: any) => r.source === 'unimap').dispatched).toBe(false);
+  expect(data.requests.find((r: any) => r.source === 'unisza').dispatched).toBe(false);
   expect(data.requests.filter((r: any) => r.dispatched)).toHaveLength(2);
 });
-it('selects USIM without dispatching UM', async () => {
+it('selects UTeM without dispatching UM', async () => {
   const d = deps();
-  const response = await handleCourseCrawlDispatch(request('usim'), d);
+  const response = await handleCourseCrawlDispatch(request('utem'), d);
   expect(response.status).toBe(200);
-  expect(d.sent.map((r: any) => r.source)).toEqual(['usim']);
+  expect(d.sent.map((r: any) => r.source)).toEqual(['utem']);
+});
+it('rejects retired UniMAP and USIM sources', async () => {
+  for (const retired of ['unimap', 'usim']) {
+    const d = deps();
+    const response = await handleCourseCrawlDispatch(request(retired), d);
+    expect(response.status).toBe(400);
+    expect(d.sent).toEqual([]);
+  }
 });

@@ -2,9 +2,11 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { BottomTabBar } from './BottomTabBar';
 import { PublicHeader } from './PublicHeader';
 import { Footer } from './Footer';
+import { Breadcrumbs } from './Breadcrumbs';
 import { ChatLauncher } from '@/components/chat/ChatLauncher';
 import { JourneyLayout } from '@/components/journey/JourneyLayout';
 import '@/styles/rail-dashboard.css';
+import '@/styles/station-chrome.css';
 
 /**
  * Student application shell (ui-spec §1.3 / §11):
@@ -17,13 +19,16 @@ import '@/styles/rail-dashboard.css';
 export function AppShell() {
   const { pathname } = useLocation();
   const isCareerCatalogue = pathname === '/careers';
+  const ownsBreadcrumbs =
+    pathname === '/find-your-path' || pathname === '/profile' || pathname === '/profile-setup';
+  const isStation = pathname === '/profile' || pathname === '/profile-setup';
   const isJourney =
     pathname === '/find-your-path' ||
     pathname.startsWith('/find-your-path/') ||
     pathname === '/recommendations';
   return (
     <div
-      className={`site-app-shell min-h-screen flex flex-col bg-paper${pathname === '/dashboard' ? ' rail-dashboard-shell' : ''}`}
+      className={`site-app-shell min-h-screen flex flex-col bg-paper${pathname === '/dashboard' ? ' rail-dashboard-shell' : ''}${isJourney || isStation ? ' station-page' : ''}`}
     >
       <a
         href="#main"
@@ -32,6 +37,7 @@ export function AppShell() {
         Skip to content
       </a>
       <PublicHeader />
+      {!ownsBreadcrumbs && <Breadcrumbs />}
       <div
         className={`site-shell-body flex-1${pathname === '/dashboard' ? ' rail-dashboard-shell' : ''}`}
       >

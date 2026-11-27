@@ -16,6 +16,7 @@ import AdminScholarshipDiscovery from './AdminScholarshipDiscovery';
 beforeEach(() => {
   vi.clearAllMocks();
   h.run = null;
+  h.withSources = false;
   h.items = Array.from({ length: 25 }, (_, i) => ({
     id: 'candidate-' + i,
     revision: 1,
@@ -43,17 +44,35 @@ beforeEach(() => {
   }));
   h.rpc.mockImplementation(async (name, args) => {
     if (name === 'list_scholarship_discoveries') {
-      const items = h.items
+      const tabbed = h.items
         .filter((item) => (args.p_tab === 'added' ? item.scholarship_id : !item.scholarship_id))
-        .filter((item) => !args.p_search || item.name.includes(args.p_search));
+        .filter((item) => !args.p_search || item.name.includes(args.p_search))
+        .filter((item) => !h.withSources || item.review_state !== 'ignored')
+        .map((item) => ({ ...item, from_supported_provider: Boolean(item.evidence?.parser) }));
+      const items = tabbed.filter(
+        (item) =>
+          !args.p_source ||
+          (args.p_source === 'supported') === item.from_supported_provider
+      );
       return {
         data: {
           items: items.slice((args.p_page - 1) * args.p_page_size, args.p_page * args.p_page_size),
           total: items.length,
           providers: ['Bright Foundation'],
+          ...(h.withSources
+            ? {
+                supported_total: tabbed.filter((i) => i.from_supported_provider).length,
+                search_total: tabbed.filter((i) => !i.from_supported_provider).length,
+              }
+            : {}),
         },
         error: null,
       };
+    }
+    if (name === 'ignore_unsupported_discoveries') {
+      const targets = h.items.filter((i) => !i.scholarship_id && !i.evidence?.parser);
+      targets.forEach((i) => (i.review_state = 'ignored'));
+      return { data: targets.length, error: null };
     }
     if (name === 'publish_scholarship_discovery') {
       const item = h.items.find((i) => i.id === args.p_id);
@@ -331,4 +350,36 @@ it('reloads fresh details after a stale review conflict', async () => {
   await userEvent.click(screen.getByRole('button', { name: 'Reload latest details' }));
   await screen.findByText('Latest details loaded.');
   expect(screen.getByLabelText('Closing date')).toHaveValue('2032-05-20');
+});
+
+it('filters by source, marks supported providers and only sends p_source when filtering', async () => {
+  h.withSources = true;
+  h.items[0].evidence = { official_source: true, parser: 'mara' };
+  h.items[1].evidence = { official_source: true, parser: 'bnm' };
+  mount();
+  await screen.findByText(/25 scholarships · 2 from supported providers, 23 from web search/);
+  const first = h.rpc.mock.calls.find(([name]) => name === 'list_scholarship_discoveries')[1];
+  expect(first).not.toHaveProperty('p_source');
+  expect(screen.getAllByText('Supported provider')).toHaveLength(2);
+  await userEvent.selectOptions(screen.getByLabelText('Source'), 'supported');
+  await screen.findByText(/^2 scholarships/);
+  const last = h.rpc.mock.calls.filter(([name]) => name === 'list_scholarship_discoveries').at(-1)[1];
+  expect(last.p_source).toBe('supported');
+});
+
+it('ignores all web-search results in one confirmed action', async () => {
+  h.withSources = true;
+  h.items[0].evidence = { official_source: true, parser: 'mara' };
+  const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
+  mount();
+  await screen.findByText(/24 from web search/);
+  await userEvent.click(screen.getByRole('button', { name: 'Ignore all web-search results' }));
+  expect(confirm).toHaveBeenCalledWith(expect.stringMatching(/Ignore 24 web-search results\?/));
+  expect(h.rpc.mock.calls.some(([name]) => name === 'ignore_unsupported_discoveries')).toBe(false);
+  confirm.mockReturnValue(true);
+  await userEvent.click(screen.getByRole('button', { name: 'Ignore all web-search results' }));
+  await screen.findByText('Ignored 24 web-search results.');
+  await screen.findByText(/1 scholarship · 1 from supported providers, 0 from web search/);
+  expect(screen.queryByRole('button', { name: 'Ignore all web-search results' })).not.toBeInTheDocument();
+  confirm.mockRestore();
 });

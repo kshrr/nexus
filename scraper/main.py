@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from .discovery_models import DiscoverySettings, DiscoveryRunStats
-from .discovery import RunBudget, run_discovery
+from .discovery import RunBudget, run_discovery, run_known_sources
 from .monitor import run_monitoring
 from .search import BraveSearchClient
 import os
@@ -64,7 +64,7 @@ def scrape_source(
     for url in targets:
         try:
             html = fetcher.get(url)
-            found = parser.parse(html, url)
+            found = parser.extract(html, url, getattr(fetcher, "get_pdf_document", None))
         except (FetchError, ValueError) as exc:
             stats.error(f"{parser.source_id}: {url}: {exc}")
             log(f"  SKIP {url}: {exc}")
@@ -196,7 +196,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.mode in ('monitoring','combined'):
             run_monitoring(db,fetcher,stats,budget,40 if args.mode=='combined' else settings.max_pages)
         if args.mode in ('discovery','combined'):
-            run_discovery(db,BraveSearchClient(os.environ.get('BRAVE_SEARCH_API_KEY','')),fetcher,settings,stats,budget)
+            search_key=os.environ.get('BRAVE_SEARCH_API_KEY','')
+            # Known providers first, so the search budget cannot starve them.
+            # Gated on the key so a missing secret still fails discovery
+            # clearly instead of quietly shrinking it to the registered parsers.
+            if search_key: run_known_sources(db,fetcher,stats,budget)
+            run_discovery(db,BraveSearchClient(search_key),fetcher,settings,stats,budget)
     except Exception as error:
         stats.error(redact(str(error))); log(f'Run error: {error}')
     finally:
@@ -214,6 +219,7 @@ class PreviewDb:
     def stage(self,candidate):
         log(f'Would stage: {candidate.record.get("name") or candidate.canonical_url} ({candidate.review_state})')
         return {'id':candidate.identity_key,'outcome':'created'}
+    def auto_publish(self,id): log(f'Would auto-publish if the database judges it ready: {id}'); return {'outcome':'preview'}
     def monitor(self,id,candidate): log(f'Would monitor: {candidate.record.get("name")}'); return 'unchanged'
     def record_discovery_error(self,id,error): log(f'Monitor preview: {error}')
 

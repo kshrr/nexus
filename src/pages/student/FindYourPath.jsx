@@ -1,9 +1,58 @@
 import { useNavigate } from 'react-router-dom';
 import { Button, Icon } from '@/components/ui';
 import { LoadingState } from '@/components/feedback';
-import { StationIllustration } from '@/components/journey/StationIllustration';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { useJourneyState } from '@/components/journey/useJourneyState';
 import { formatDate } from '@/lib/format';
+import '@fontsource/barlow/400.css';
+import '@fontsource/barlow/500.css';
+import '@fontsource/barlow/600.css';
+import '@fontsource/barlow/700.css';
+import '@fontsource/barlow-condensed/700.css';
+
+// Decorative previews. They show the shape of each result, not the student's data.
+function MiniRadar({ done }) {
+  const point = (i, r) => {
+    const a = -Math.PI / 2 + (i / 6) * Math.PI * 2;
+    return `${50 + Math.cos(a) * r},${50 + Math.sin(a) * r}`;
+  };
+  const ring = (r) => [0, 1, 2, 3, 4, 5].map((i) => point(i, r)).join(' ');
+  const shape = [34, 22, 30, 16, 26, 20].map((r, i) => point(i, r)).join(' ');
+  return (
+    <svg className={`path-mini${done ? ' is-done' : ''}`} viewBox="0 0 100 100" aria-hidden="true">
+      <polygon points={ring(40)} className="path-mini-ring" />
+      <polygon points={ring(22)} className="path-mini-ring" />
+      <polygon points={shape} className="path-mini-shape" />
+    </svg>
+  );
+}
+
+function MiniBars({ done }) {
+  return (
+    <svg className={`path-mini${done ? ' is-done' : ''}`} viewBox="0 0 100 100" aria-hidden="true">
+      {[78, 58, 70, 40].map((width, index) => (
+        <g key={width}>
+          <rect
+            x="8"
+            y={16 + index * 22}
+            width="84"
+            height="10"
+            rx="5"
+            className="path-mini-ring"
+          />
+          <rect
+            x="8"
+            y={16 + index * 22}
+            width={width}
+            height="10"
+            rx="5"
+            className="path-mini-shape"
+          />
+        </g>
+      ))}
+    </svg>
+  );
+}
 
 export function FindYourPath() {
   const {
@@ -19,35 +68,38 @@ export function FindYourPath() {
   } = useJourneyState();
   const navigate = useNavigate();
   const ready = hasRiasec && !riasecError;
+  const total = isSpm ? 2 : 1;
+  const done = (ready ? 1 : 0) + (isSpm && hasAcademics && !academicError ? 1 : 0);
 
   return (
     <div className="path-hub">
-      <header className="path-hub-hero">
-        <div className="path-hub-intro">
-          <p className="path-eyebrow">
-            <span aria-hidden="true">N</span> NEXUS EXPRESS / JOURNEY GUIDE
-          </p>
-          <h1>Find your path</h1>
-          <p>
-            A little curiosity.
-            <br />A world of connections.
-          </p>
-          <p className="path-hero-description">
-            Connect your interests and academic strengths to the possibilities ahead. Your next
-            chapter starts here.
-          </p>
-        </div>
-        <div className="path-hero-art">
-          <StationIllustration />
-          <span>DEPARTING FROM YOU. ARRIVING AT POSSIBILITY.</span>
+      <header className="path-hero">
+        <Breadcrumbs tone="light" />
+        <div className="path-hero-row">
+          <div>
+            <h1>Find your path</h1>
+            <p>Connect your interests and strengths to what comes next.</p>
+          </div>
+          <div
+            className="path-ticket"
+            role="group"
+            aria-label={`${done} of ${total} stops completed`}
+          >
+            <div className="path-ticket-main">
+              <span>Stops completed</span>
+              <strong>
+                {done}
+                <em> / {total}</em>
+              </strong>
+            </div>
+            <div className="path-ticket-stub" aria-hidden="true">
+              <b>BOARD</b>
+              <i />
+            </div>
+          </div>
         </div>
       </header>
-      <div className="path-service-strip">
-        <span>
-          <i aria-hidden="true" /> NEXUS LINE · ALL STOPS
-        </span>
-        <span>INTERESTS → STRENGTHS → POSSIBILITIES</span>
-      </div>
+
       {loadingRiasec || loadingAcademics ? (
         <LoadingState rows={2} />
       ) : (
@@ -59,20 +111,16 @@ export function FindYourPath() {
             </p>
           )}
           <div className="path-station-grid">
-            <article className="path-station-card">
+            <article className={`path-station-card${ready ? ' is-complete' : ''}`}>
               <div className="path-card-top">
                 <span className="path-station-number">01</span>
-                <span className="path-card-kind">INTEREST STATION</span>
-                <Icon name="target" />
+                <MiniRadar done={ready} />
               </div>
               <div className="path-card-status">
                 {riasecError ? 'Status unavailable' : hasRiasec ? '✓ Completed' : 'Ready to depart'}
               </div>
               <h2>RIASEC test</h2>
-              <p>
-                Discover the kinds of activities and work environments that interest you. There are
-                no right or wrong answers.
-              </p>
+              <p>Find the activities and work you enjoy. There are no wrong answers.</p>
               <div className="path-card-meta">
                 <Icon name="clock" className="h-4 w-4" />
                 <span>
@@ -108,11 +156,13 @@ export function FindYourPath() {
                 )}
               </div>
             </article>
-            <article className="path-station-card path-station-academic">
+
+            <article
+              className={`path-station-card${isSpm && hasAcademics && !academicError ? ' is-complete' : ''}${isSpm ? '' : ' is-bypass'}`}
+            >
               <div className="path-card-top">
                 <span className="path-station-number">02</span>
-                <span className="path-card-kind">STRENGTH STATION</span>
-                <Icon name="chart" />
+                <MiniBars done={isSpm && hasAcademics && !academicError} />
               </div>
               <div className="path-card-status">
                 {!isSpm
@@ -126,8 +176,8 @@ export function FindYourPath() {
               <h2>Academic analysis</h2>
               <p>
                 {isSpm
-                  ? 'See how your subjects connect. Bring together results from three exam periods to explore your academic strengths.'
-                  : 'This stop is for SPM leavers. Pre-university grading differs between programmes, so your journey uses interests and goals instead.'}
+                  ? 'See your strongest subjects across three exam periods.'
+                  : 'This stop is for SPM leavers. Your journey uses your interests instead.'}
               </p>
               <div className="path-card-meta">
                 <Icon name="book" className="h-4 w-4" />
@@ -156,19 +206,19 @@ export function FindYourPath() {
               </div>
             </article>
           </div>
+
           <article className={`path-destination-card${ready ? ' is-ready' : ''}`}>
             <div className="path-destination-heading">
               <span className="path-station-number">03</span>
-              <span>NEXT DESTINATION</span>
-              <span className="path-destination-code">NX / 03</span>
+              <span>Next destination</span>
             </div>
             <div className="path-destination-main">
               <div>
                 <h2>Nexus recommendations</h2>
                 <p>
                   {ready
-                    ? 'Your interests are connected. Explore careers and courses that could become your next chapter.'
-                    : 'Complete the RIASEC test to connect your interests with careers and courses. Academic results add another perspective for SPM leavers.'}
+                    ? 'Your interests are connected. Explore careers and courses for you.'
+                    : 'Complete the RIASEC test to unlock careers and courses for you.'}
                 </p>
               </div>
               <Button
@@ -180,22 +230,15 @@ export function FindYourPath() {
                 See my recommendations <Icon name="arrowRight" />
               </Button>
             </div>
-            <div className="path-destination-footer">
-              <span id="path-recommendation-requirement">
-                <i aria-hidden="true" />
-                {ready
-                  ? 'Connection ready · choose your next direction'
-                  : riasecError
-                    ? 'RIASEC status unavailable · refresh to try again'
-                    : 'Awaiting connection · complete RIASEC first'}
-              </span>
-              <span>YOUR FUTURE, YOUR DIRECTION</span>
-            </div>
+            <p className="path-destination-footer" id="path-recommendation-requirement">
+              <i aria-hidden="true" />
+              {ready
+                ? 'Ready · choose your next direction'
+                : riasecError
+                  ? 'RIASEC status unavailable · refresh to try again'
+                  : 'Awaiting connection · complete RIASEC first'}
+            </p>
           </article>
-          <p className="path-hub-footnote">
-            <Icon name="compass" className="h-4 w-4" /> A guide to possibilities, not a fixed route.
-            Explore at your own pace.
-          </p>
         </>
       )}
     </div>

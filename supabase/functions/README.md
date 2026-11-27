@@ -182,20 +182,27 @@ miss would contradict §10.6's whole point.
 plainly that date of birth, IC number and nationality are **not collected** —
 so neither can ever be verified from stored data.
 
-**Implemented:** both report as `unknown` ("Nexus can't check this"), never as a
-pass or a fail. Guessing "satisfied" would be a fabricated ✓ on the single most
-consequential screen in the product.
-**Needs:** either drop the two types from the taxonomy, or add the fields and
-address the PDPA consequences of collecting nationality and DOB from minors.
-Until then, an admin should mark such criteria `is_checkable = false`.
+**Implemented:** `age` reports as `unknown` ("Nexus can't check this"), never as
+a pass or a fail — date of birth is still not collected.
+**Resolved for citizenship (25 Nov 2026):** nationality is now an *optional,
+self-declared* profile answer (`profiles.nationality`, migration 0036:
+`malaysian` | `non_malaysian` | null), owner-only under the existing RLS and not
+in the chatbot context. `citizenship` = `MY` is satisfied/unsatisfied from it, and
+`unknown` with an "add your nationality" hint when the student has not answered.
+The privacy notice states this (policy version 2026-11-25).
 
 ### 9. `min_grade` and `subject_grade` value shapes are undefined *(mechanical)*
 
 §3.4 gives `value jsonb` and the operator set, but never the payload shape.
 
 **Implemented:** `min_grade` takes a letter grade or a point value and compares
-it against the average across every recorded subject; `subject_grade` takes
-`{ "subject": "MATH", "grade": "B" }`. Both accept letters or §8.2 points. Where
+it against the average across every recorded subject, **or**
+`{ "count": 8, "grade": "A" }` — at least N recorded subjects at that grade or
+better (scraped SPM wording such as "8A", "lima kredit"); `subject_grade` takes
+`{ "subject": "MATH", "grade": "B" }`. Either may carry `"alt": true` when the
+provider also accepts another exam (STAM, UEC, O-Level …): a student with no SPM
+results is then `unknown`, not a failure. The crawler derives these from
+provider wording in `scraper/parsers/requirements.py`. Both accept letters or §8.2 points. Where
 the student has no data the criterion is `unsatisfied` **with an explanatory
 hint** — which is what §3.11's mockup does ("✗ Minimum CGPA 3.75 / You haven't
 added a CGPA").

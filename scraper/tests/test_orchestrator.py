@@ -145,20 +145,23 @@ def test_records_get_an_identity_hash_and_scrape_time():
 class TestRegistry:
     def test_get_parsers_returns_all_registered_by_default(self):
         ids = {p.source_id for p in get_parsers()}
-        assert {"jpa", "petronas", "ysd", "khazanah"} <= ids
+        assert {"jpa", "petronas", "ysd", "khazanah", "mara", "ytm", "ytn", "yayasan_sarawak", "yayasan_sabah", "bnm", "ptptn", "yayasan_selangor", "maybank"} <= ids
 
     def test_an_unknown_source_raises_with_a_helpful_hint(self):
-        with pytest.raises(KeyError, match="mara"):
-            get_parsers(["mara"])
+        # Yayasan Peneraju is inspected-but-unavailable, so the error carries its reason.
+        with pytest.raises(KeyError, match="no longer runs"):
+            get_parsers(["peneraju"])
 
-    def test_mara_is_listed_as_unavailable_with_a_reason(self):
-        assert "does not resolve" in UNAVAILABLE["mara"]
+    def test_mara_is_registered_now_its_financing_index_is_stable(self):
+        assert "mara" in REGISTRY and "mara" not in UNAVAILABLE
 
-    def test_bnm_is_unavailable_because_of_anti_bot_protection(self):
-        # A source we could reach with a browser but whose WAF blocks the
-        # scraper's HTTP client. The brief says report it, do not bypass it.
-        assert "bnm" in UNAVAILABLE
-        assert "403" in UNAVAILABLE["bnm"] or "WAF" in UNAVAILABLE["bnm"]
+    def test_bnm_is_registered_now_it_serves_the_ordinary_fetcher(self):
+        # It was left unscraped while its WAF blocked our client; nothing was
+        # bypassed to add it.
+        assert "bnm" in REGISTRY and "bnm" not in UNAVAILABLE
+
+    def test_peneraju_is_unavailable_because_it_has_no_post_spm_scholarship(self):
+        assert "Diploma or Degree" in UNAVAILABLE["peneraju"]
 
     def test_an_unavailable_source_is_not_also_registered(self):
         assert not (set(UNAVAILABLE) & set(REGISTRY))

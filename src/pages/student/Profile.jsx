@@ -3,18 +3,31 @@ import { useAuth } from '@/context/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { useSubjects } from '@/hooks/useSubjects';
 import { useAcademicResults } from '@/hooks/useAcademicResults';
-import { PageHeader } from '@/components/layout';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { Alert, Button, Card, Input, RadioGroup, Select, Tabs } from '@/components/ui';
+import { DataControls } from '@/components/profile/DataControls';
+import { EligibilityReadiness } from '@/components/profile/EligibilityReadiness';
 import { GradeEntryTable } from '@/components/academic/GradeEntryTable';
+import { SpmResultUpload } from '@/components/academic/SpmResultUpload';
+import { mergeDetectedGrades } from '@/lib/gradeMerge';
+import { INCOME_BAND_OPTIONS, NATIONALITY_OPTIONS } from '@/types';
 import { EDUCATION_LEVELS, EDUCATION_LEVEL_LABELS } from '@/types';
 import { TARGET_INDUSTRIES } from '@/config/policy';
-import { validateFullName, validatePassword } from '@/lib/validation';
+import { validateBirthYear, validateFullName, validatePassword } from '@/lib/validation';
 import { formatDate } from '@/lib/format';
+import '@fontsource/barlow/400.css';
+import '@fontsource/barlow/500.css';
+import '@fontsource/barlow/600.css';
+import '@fontsource/barlow/700.css';
+import '@fontsource/barlow-condensed/700.css';
+import '@/styles/profile-station.css';
 
+const SPM_ONLY = ['spm_actual'];
 const TABS = [
   { id: 'account', label: 'Account' },
   { id: 'education', label: 'Education' },
   { id: 'results', label: 'Results' },
+  { id: 'scholarships', label: 'Scholarship checks' },
   { id: 'privacy', label: 'Privacy' },
 ];
 
@@ -28,16 +41,21 @@ export function Profile() {
   const [tab, setTab] = useState('account');
 
   return (
-    <>
-      <PageHeader title="Profile & settings" description="Everything Nexus knows about you." />
-      <Tabs tabs={TABS} active={tab} onChange={setTab} className="mb-6" />
+    <div className="pf">
+      <header className="pf-hero">
+        <Breadcrumbs tone="light" />
+        <h1>Profile &amp; settings</h1>
+        <p>Everything Nexus knows about you.</p>
+      </header>
+      <Tabs tabs={TABS} active={tab} onChange={setTab} />
       {tab === 'account' && (
         <AccountTab user={user} profile={profile} updatePassword={updatePassword} />
       )}
       {tab === 'education' && <EducationTab profile={profile} />}
-      {tab === 'results' && <ResultsTab profile={profile} />}
+      {tab === 'results' && <ResultsTab />}
+      {tab === 'scholarships' && <ScholarshipChecksTab profile={profile} onGoTo={setTab} />}
       {tab === 'privacy' && <PrivacyTab profile={profile} />}
-    </>
+    </div>
   );
 }
 
@@ -203,33 +221,148 @@ function EducationTab({ profile }) {
 }
 
 // ---------------------------------------------------------------------------
-function ResultsTab({ profile }) {
+function ScholarshipChecksTab({ profile, onGoTo }) {
+  const { updateProfile } = useProfile();
+  const { selectedCodes, grades, loading } = useAcademicResults();
+  const [nationality, setNationality] = useState(profile?.nationality ?? '');
+  const [status, setStatus] = useState('idle');
+  const [birthYear, setBirthYear] = useState(profile?.birth_year ? String(profile.birth_year) : '');
+  const [incomeBand, setIncomeBand] = useState(profile?.household_income_band ?? '');
+  const [personalStatus, setPersonalStatus] = useState('idle');
+
+  useEffect(() => setNationality(profile?.nationality ?? ''), [profile?.nationality]);
+  useEffect(
+    () => setBirthYear(profile?.birth_year ? String(profile.birth_year) : ''),
+    [profile?.birth_year]
+  );
+  useEffect(
+    () => setIncomeBand(profile?.household_income_band ?? ''),
+    [profile?.household_income_band]
+  );
+
+  async function savePersonal() {
+    if (validateBirthYear(birthYear)) return;
+    setPersonalStatus('saving');
+    const { error } = await updateProfile({
+      birth_year: birthYear ? Number(birthYear) : null,
+      household_income_band: incomeBand || null,
+    });
+    setPersonalStatus(error ? 'error' : 'saved');
+  }
+
+  async function saveNationality(value) {
+    setNationality(value);
+    setStatus('saving');
+    const { error } = await updateProfile({ nationality: value || null });
+    setStatus(error ? 'error' : 'saved');
+  }
+
+  const gradeCount = selectedCodes.reduce(
+    (total, code) => total + Object.values(grades[code] ?? {}).filter(Boolean).length,
+    0
+  );
+  const answers = {
+    nationality,
+    educationLevel: profile?.education_level,
+    careerGoal: profile?.career_goal,
+    targetIndustry: profile?.target_industry,
+    birthYear: birthYear && !validateBirthYear(birthYear) ? birthYear : null,
+    householdIncomeBand: incomeBand,
+    gradeCount,
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <p className="text-body-sm text-ink-700">
+        When you open a scholarship, Nexus compares its requirements with these answers. Anything
+        you haven’t added shows as “can’t check” or “not met”. Add it here whenever you like.
+      </p>
+      <EligibilityReadiness
+        answers={loading ? { ...answers, gradeCount: 1 } : answers}
+        onAdd={onGoTo}
+      />
+      <Card variant="titled" title="Citizenship" action={<SaveState status={status} />}>
+        <RadioGroup
+          label="Are you a Malaysian citizen?"
+          value={nationality}
+          onChange={saveNationality}
+          options={NATIONALITY_OPTIONS}
+        />
+        <p className="mt-2 text-body-sm text-ink-500">
+          Used only to check scholarships that are for Malaysian citizens. Choose “Prefer not to
+          say” to remove it.
+        </p>
+      </Card>
+      <Card
+        variant="titled"
+        title="Age and household income"
+        action={<SaveState status={personalStatus} />}
+      >
+        <div className="flex flex-col gap-4">
+          <Input
+            label="Year of birth"
+            hint="Optional. Only the year, to check age limits."
+            inputMode="numeric"
+            maxLength={4}
+            value={birthYear}
+            onChange={(e) => {
+              setBirthYear(e.target.value.replace(/\D/g, ''));
+              setPersonalStatus('idle');
+            }}
+            error={validateBirthYear(birthYear)}
+          />
+          <Select
+            label="Monthly household income"
+            hint="Optional. A range is enough."
+            placeholder="Prefer not to say"
+            value={incomeBand}
+            options={INCOME_BAND_OPTIONS.filter((option) => option.value)}
+            onChange={(e) => {
+              setIncomeBand(e.target.value);
+              setPersonalStatus('idle');
+            }}
+          />
+          <p className="text-body-sm text-ink-500">
+            Used only to check scholarships with an age or income limit. Clear either to remove it.
+          </p>
+          <Button
+            className="w-fit"
+            size="sm"
+            onClick={savePersonal}
+            disabled={Boolean(validateBirthYear(birthYear))}
+          >
+            Save
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+function ResultsTab() {
   const { subjects } = useSubjects();
   const { replaceGrades, saving } = useProfile();
   const { selectedCodes, grades, loading, setSelectedCodes, setGrades, reload } =
     useAcademicResults();
   const [status, setStatus] = useState('idle');
 
-  if (profile && profile.education_level !== 'spm') {
-    return (
-      <Alert variant="info" title="Results analysis is for SPM leavers only.">
-        Pre-university grading isn’t standardised across programmes, so Nexus doesn’t analyse it.
-        Your recommendations use your interests and goals instead.
-      </Alert>
-    );
-  }
-
   if (loading) return <p className="text-body-sm text-ink-500">Loading your results…</p>;
 
   const gradeList = selectedCodes.flatMap((code) =>
-    Object.entries(grades[code] ?? {})
-      .filter(([, g]) => g)
-      .map(([examType, grade]) => ({ subjectCode: code, examType, grade }))
+    SPM_ONLY.filter((examType) => grades[code]?.[examType]).map((examType) => ({
+      subjectCode: code,
+      examType,
+      grade: grades[code][examType],
+    }))
   );
 
   async function save() {
     setStatus('saving');
-    const { error } = await replaceGrades(gradeList);
+    const { error } = await replaceGrades(gradeList, {
+      examTypes: SPM_ONLY,
+      keepSubjects: selectedCodes,
+    });
     setStatus(error ? 'error' : 'saved');
     if (!error) reload();
   }
@@ -241,9 +374,22 @@ function ResultsTab({ profile }) {
       action={<SaveState status={saving ? 'saving' : status} />}
     >
       <p className="mb-3 text-body-sm text-ink-500">
-        Changes here update your subject strength classification.
+        Scholarship checks use these grades, whatever level you’re at now. Changes also update your
+        subject strength classification.
       </p>
+      <div className="mb-4">
+        <SpmResultUpload
+          subjects={subjects}
+          onDetected={(found) => {
+            const merged = mergeDetectedGrades(selectedCodes, grades, found);
+            setSelectedCodes(merged.selectedCodes);
+            setGrades(merged.grades);
+            setStatus('idle');
+          }}
+        />
+      </div>
       <GradeEntryTable
+        examTypes={SPM_ONLY}
         subjects={subjects}
         selectedCodes={selectedCodes}
         grades={grades}
@@ -292,12 +438,7 @@ function PrivacyTab({ profile }) {
         </p>
       </Card>
 
-      <Card variant="titled" title="Your data">
-        <p className="text-body-sm text-ink-700">
-          Downloading a copy of your data and permanently deleting your account will be available
-          from this page. Both need a server-side operation that isn’t built yet.
-        </p>
-      </Card>
+      <DataControls />
     </div>
   );
 }
