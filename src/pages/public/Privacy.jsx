@@ -12,8 +12,14 @@ export function Privacy() {
       <h2 className="mt-8 text-h3 font-sans">What we collect</h2>
       <p className="mt-2 text-ink-700">
         Your name and email (for your account), your education level and career goals, and — if you
-        are an SPM leaver — the subject grades you enter. Nothing else. We do not collect your IC
-        number, phone number, address, or household income.
+        are an SPM leaver — the subject grades you enter. If you choose to answer it, your
+        nationality (Malaysian or not), used only to check scholarships that are for Malaysian
+        citizens; you can skip it or remove it any time. Nothing else. We do not collect your IC
+        number, date of birth, phone number, address, or household income.
+      </p>
+      <p className="mt-2 text-ink-700">
+        If you fill your grades from a photo of your result slip, the photo is read on your own
+        device. It is never uploaded or stored; only the grades you confirm are saved.
       </p>
 
       <h2 className="mt-6 text-h3 font-sans">Why we collect it</h2>

@@ -31,6 +31,7 @@ export function useScholarshipDiscoveries({
   search = '',
   provider = '',
   reviewState = 'all',
+  source = 'all',
   page = 1,
   pageSize = 20,
 } = {}) {
@@ -58,6 +59,9 @@ export function useScholarshipDiscoveries({
         p_review_state: reviewState,
         p_page: page,
         p_page_size: pageSize,
+        // Only sent when filtering, so the six-argument function still serves
+        // the default view on a database without migration 0031.
+        ...(source !== 'all' ? { p_source: source } : {}),
       });
       if (response.error) throw response.error;
       if (alive.current && current === generation.current)
@@ -67,7 +71,7 @@ export function useScholarshipDiscoveries({
     } finally {
       if (alive.current && current === generation.current) setLoading(false);
     }
-  }, [tab, search, provider, reviewState, page, pageSize, alive]);
+  }, [tab, search, provider, reviewState, source, page, pageSize, alive]);
   reloadRef.current = load;
   useEffect(() => {
     load();
@@ -155,6 +159,8 @@ export function useScholarshipDiscoveries({
         { p_id: candidate.id, p_revision: candidate.revision },
         'approve:' + candidate.id
       ),
+    ignoreUnsupported: () =>
+      mutate('ignore_unsupported_discoveries', {}, 'ignore-unsupported'),
     ignore: (id, ignored = true) =>
       mutate('set_discovery_ignored', { p_id: id, p_ignored: ignored }, 'ignore:' + id),
     setMonitoring: (id, enabled) =>

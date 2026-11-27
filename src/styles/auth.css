@@ -1,0 +1,114 @@
+/* Sign-in, register, verify and reset screens: a plain, centred card. */
+.auth-stage {
+  display: flex;
+  justify-content: center;
+  padding: 48px 16px 88px;
+  background: #f3f6fb;
+  font-family: 'Barlow', system-ui, sans-serif;
+  color: #0a2342;
+}
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 36px 36px 32px;
+  border: 1px solid #dde5f0;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 24px 40px -32px rgba(10, 35, 66, 0.35);
+}
+.auth-card h1 {
+  margin: 0;
+  font-family: 'Barlow', system-ui, sans-serif;
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  color: #0a2342;
+}
+.auth-subtitle {
+  margin: 10px 0 0;
+  font-size: 16px;
+  line-height: 1.5;
+  color: #4b5d76;
+}
+.auth-body {
+  margin-top: 24px;
+}
+.auth-footer {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid #dde5f0;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #4b5d76;
+}
+.auth-card a {
+  color: #c2480a;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.auth-card a:hover {
+  color: #0a2342;
+}
+
+/* Form controls */
+.auth-body label {
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0a2342;
+}
+.auth-body input:not([type='checkbox']):not([type='radio']) {
+  height: 48px;
+  border: 1px solid #cfd9e8;
+  border-radius: 12px;
+  background: #fff;
+  color: #0a2342;
+  font-family: inherit;
+  font-size: 16px;
+}
+.auth-body input:not([type='checkbox']):not([type='radio']):focus {
+  border-color: #f26a21;
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(242, 106, 33, 0.18);
+}
+.auth-body input[type='checkbox'] {
+  accent-color: #f26a21;
+}
+.auth-body button[type='submit'] {
+  height: 50px;
+  border: 0;
+  border-radius: 12px;
+  background: #0a2342;
+  color: #fff;
+  font-family: inherit;
+  font-size: 17px;
+  font-weight: 600;
+  box-shadow: none;
+  transition: background-color 180ms ease;
+}
+.auth-body button[type='submit']:hover:not(:disabled) {
+  background: #f26a21;
+  box-shadow: none;
+}
+.auth-body [role='alert'] {
+  color: #b3340f;
+}
+.auth-card :focus-visible {
+  outline: 3px solid #f26a21;
+  outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+  .auth-stage {
+    padding: 24px 12px 56px;
+  }
+  .auth-card {
+    padding: 28px 22px 24px;
+    border-radius: 20px;
+  }
+  .auth-card h1 {
+    font-size: 30px;
+  }
+}

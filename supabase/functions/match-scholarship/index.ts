@@ -13,7 +13,12 @@
  */
 import { getCaller } from '../_shared/auth.ts';
 import { fail, ok, preflight, serverError } from '../_shared/http.ts';
-import { GRADE_POINTS, matchAll, type Criterion, type ScholarshipRow } from '../_shared/scholarship.ts';
+import {
+  GRADE_POINTS,
+  matchAll,
+  type Criterion,
+  type ScholarshipRow,
+} from '../_shared/scholarship.ts';
 
 const MAX_IDS = 200;
 
@@ -39,18 +44,26 @@ Deno.serve(async (req: Request) => {
 
     let ids: string[] | null = null;
     if (Array.isArray(body.scholarship_ids)) {
-      ids = body.scholarship_ids.filter((v): v is string => typeof v === 'string').slice(0, MAX_IDS);
+      ids = body.scholarship_ids
+        .filter((v): v is string => typeof v === 'string')
+        .slice(0, MAX_IDS);
     }
 
     // ---- the student's own data (RLS-scoped) ------------------------------
     const [profileRes, resultsRes, recsRes] = await Promise.all([
       client
         .from('profiles')
-        .select('education_level, career_goal, target_industry')
+        .select(
+          'education_level, career_goal, target_industry, nationality, birth_year, household_income_band'
+        )
         .eq('id', userId)
         .maybeSingle(),
       client.from('academic_results').select('subject_code, grade').eq('user_id', userId),
-      client.from('recommendations').select('target_id').eq('user_id', userId).eq('rec_type', 'course'),
+      client
+        .from('recommendations')
+        .select('target_id')
+        .eq('user_id', userId)
+        .eq('rec_type', 'course'),
     ]);
     if (profileRes.error) throw profileRes.error;
     if (resultsRes.error) throw resultsRes.error;
@@ -118,6 +131,9 @@ Deno.serve(async (req: Request) => {
       targetIndustry: profileRes.data?.target_industry ?? null,
       subjectPoints,
       recommendedFields,
+      nationality: profileRes.data?.nationality ?? null,
+      birthYear: profileRes.data?.birth_year ?? null,
+      householdIncomeBand: profileRes.data?.household_income_band ?? null,
     });
 
     return ok({ matches, generated_at: new Date().toISOString() });

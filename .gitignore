@@ -7,6 +7,9 @@ dist
 dist-ssr
 *.local
 
+# separate public-repository checkout and export tooling
+portfolio-export/
+
 # environment — never commit real secrets
 .env
 .env.*

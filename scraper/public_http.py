@@ -12,6 +12,9 @@ import threading
 from dataclasses import dataclass
 from urllib.parse import urlsplit, urlunsplit, urljoin
 
+# Per-address connect allowance before trying the next validated address.
+CONNECT_ATTEMPT_SECONDS=8
+
 class FetchError(RuntimeError):
     pass
 
@@ -63,7 +66,22 @@ class PinnedHTTPSConnection(http.client.HTTPSConnection):
         self.destination=destination
     def connect(self):
         started=time.monotonic()
-        raw=socket.create_connection((self.destination.ips[0],self.destination.port),self.timeout)
+        # Every address was validated as public. Try them in turn, IPv4 first, so a
+        # host whose IPv6 address is unreachable from this network (common on CI
+        # runners) still connects instead of waiting out the whole timeout.
+        ips=sorted(self.destination.ips,key=lambda ip:':' in ip)
+        raw=None;last_error=None
+        for index,ip in enumerate(ips):
+            remaining=self.timeout-(time.monotonic()-started)
+            if remaining<=0: break
+            attempt=remaining if index==len(ips)-1 else min(remaining,CONNECT_ATTEMPT_SECONDS)
+            try:
+                raw=socket.create_connection((ip,self.destination.port),attempt)
+                break
+            except OSError as error:
+                last_error=error
+        if raw is None:
+            raise last_error or FetchError('request timeout')
         try:
             remaining=self.timeout-(time.monotonic()-started)
             if remaining<=0: raise FetchError('request timeout')

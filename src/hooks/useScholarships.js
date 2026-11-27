@@ -152,10 +152,28 @@ export function useScholarshipFacets() {
   }, [rows, loading]);
 }
 
-/** One scholarship plus its eligibility criteria (public read). */
+/** Keep only https PDF links; the database function already enforces this. */
+function safeDocuments(value) {
+  if (!Array.isArray(value)) return [];
+  return value.filter((doc) => {
+    try {
+      const url = new URL(doc?.url);
+      return url.protocol === 'https:' && /\.pdf$/i.test(url.pathname) && Boolean(doc.label);
+    } catch {
+      return false;
+    }
+  });
+}
+
+/**
+ * One scholarship plus its eligibility criteria and the official requirement
+ * PDFs it refers to (public read). Documents are optional: if they cannot be
+ * loaded the scholarship still shows, without the list.
+ */
 export function useScholarship(id) {
   const [scholarship, setScholarship] = useState(null);
   const [criteria, setCriteria] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -167,18 +185,22 @@ export function useScholarship(id) {
     setLoading(true);
     setError(null);
     try {
-      const [sRes, cRes] = await Promise.all([
+      const [sRes, cRes, dRes] = await Promise.all([
         supabase.from('scholarships').select('*').eq('id', id).maybeSingle(),
         supabase
           .from('scholarship_criteria')
           .select('id, criterion_type, operator, value, label, is_checkable')
           .eq('scholarship_id', id)
           .order('id'),
+        supabase
+          .rpc('scholarship_source_documents', { p_scholarship_id: id })
+          .then((res) => res, () => ({ data: [] })),
       ]);
       if (sRes.error) throw sRes.error;
       if (cRes.error) throw cRes.error;
       setScholarship(sRes.data ?? null);
       setCriteria(cRes.data ?? []);
+      setDocuments(dRes?.error ? [] : safeDocuments(dRes?.data));
     } catch (err) {
       setError(normaliseError(err));
     } finally {
@@ -190,5 +212,5 @@ export function useScholarship(id) {
     load();
   }, [load]);
 
-  return { scholarship, criteria, loading, error, reload: load };
+  return { scholarship, criteria, documents, loading, error, reload: load };
 }

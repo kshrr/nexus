@@ -31,7 +31,7 @@ export function FitExplanation({ fit, hasRiasec }) {
       <p className="text-caption font-semibold uppercase tracking-wide text-pine-700">
         Based on your Nexus profile
       </p>
-      <div className="mt-3 grid gap-4 md:grid-cols-2">
+      <div className="mt-3 grid gap-4">
         {fit.riasec && (
           <div>
             <p className="text-caption text-ink-500">

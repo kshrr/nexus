@@ -110,6 +110,15 @@ LINK_ALLOWLIST = (
     "mqa.gov.my",
     "yayasanpeneraju.com.my",
     "biasiswa.gov.my",
+    # Yayasan TM's application portal only (linked from ytm.tm.com.my), not
+    # the whole tm.com.my domain.
+    "ytmapps.tm.com.my",
+    # UNITEN's admissions portal, the Apply target on ytn.tnb.com.my.
+    "info.uniten.edu.my",
+    # Sabah Education Sponsorship Portal, where Yayasan Sabah applications go.
+    "ptps.sabah.gov.my",
+    # PTPTN's own online application portal (ptptn.gov.my/ionline).
+    "ptptn.gov.my",
 )
 
 
@@ -342,3 +351,26 @@ def parse_datetime_iso(value: str | None) -> datetime | None:
         return datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         return None
+
+
+def clean_documents(documents, source_url: str, *, limit: int = 5) -> list[dict]:
+    """Keep only official PDF links a student can safely open: https, a .pdf
+    path, and the same host as the scholarship's source page (a harvested link
+    to another site is a phishing vector, as for application links). Labels are
+    cleaned like criteria labels. The database function that serves these to
+    the website applies the same host and https rules again."""
+    source_host = (urlparse(source_url).hostname or "").lower()
+    out: list[dict] = []
+    for doc in documents or []:
+        url = clean_url(doc.get("url"))
+        if not url:
+            continue
+        parsed = urlparse(url)
+        if (parsed.hostname or "").lower() != source_host or not parsed.path.lower().endswith(".pdf"):
+            continue
+        label, _ = clean_text(doc.get("label"), "label")
+        if label and url not in [d["url"] for d in out]:
+            out.append({"label": label[:200], "url": url})
+        if len(out) >= limit:
+            break
+    return out

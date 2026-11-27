@@ -150,6 +150,12 @@ export function EligibilityChecklist({ criteria, match, authenticated, loading, 
                 {item.label}
               </span>
               {item.hint && <span className="block text-body-sm text-ink-500">{item.hint}</span>}
+              {item.status !== 'satisfied' &&
+                /profile|results|goal|recommendations/i.test(item.hint ?? '') && (
+                  <Link to="/profile" className="text-body-sm text-pine-700 underline">
+                    Update your profile
+                  </Link>
+                )}
             </span>
           </li>
         ))}

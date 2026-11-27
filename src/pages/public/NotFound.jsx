@@ -1,11 +1,13 @@
 import { Link } from 'react-router-dom';
 import { PublicHeader } from '@/components/layout/PublicHeader';
 import { Footer } from '@/components/layout/Footer';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 
 export function NotFound() {
   return (
     <div className="nexus-public-page flex min-h-screen flex-col">
       <PublicHeader />
+      <Breadcrumbs items={[{ label: 'Home', to: '/' }, { label: 'Page not found' }]} />
       <main id="main" className="flex-1">
         <div className="mx-auto flex min-h-[60vh] max-w-prose flex-col items-center justify-center px-4 text-center">
           <p className="text-caption text-ink-500">Error 404</p>

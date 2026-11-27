@@ -10,7 +10,7 @@ it('shows programme requirement evidence only for registered official sources', 
           route: 'SPM',
           heading: 'Published SPM requirements',
           text: 'Published criteria',
-          source_url: 'https://admission.usim.edu.my/academic-programmes/?pid=73',
+          source_url: 'https://www.unisza.edu.my/our-faculties/foundation-in-science-and-medicine',
         },
         {
           applicant_category: 'Local',
@@ -23,5 +23,5 @@ it('shows programme requirement evidence only for registered official sources', 
     />
   );
   expect(screen.getAllByRole('link', { name: /official requirement source/i })).toHaveLength(1);
-  expect(screen.getByRole('link').href).toContain('?pid=73');
+  expect(screen.getByRole('link').href).toContain('foundation-in-science-and-medicine');
 });

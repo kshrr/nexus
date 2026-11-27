@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { Alert, Badge, Button, Card, Icon, Skeleton } from '@/components/ui';
 import { ErrorState } from '@/components/feedback';
+import { useBreadcrumbLabel } from '@/components/layout/breadcrumbContext';
 import { DeadlineBadge } from '@/components/scholarship/DeadlineBadge';
 import { EligibilityChecklist } from '@/components/scholarship/EligibilityChecklist';
 import { useScholarship } from '@/hooks/useScholarships';
@@ -31,7 +32,8 @@ const DETAIL_TABS = [
 export function ScholarshipDetail() {
   const { id } = useParams();
   const { isAuthenticated } = useAuth();
-  const { scholarship, criteria, loading, error, reload } = useScholarship(id);
+  const { scholarship, criteria, documents = [], loading, error, reload } = useScholarship(id);
+  useBreadcrumbLabel(scholarship?.name);
   const [active, setActive] = useState('overview');
   const [saveError, setSaveError] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -198,6 +200,31 @@ export function ScholarshipDetail() {
           >
             <p className="scholarship-small-label">02 / Check your route</p>
             {checklist}
+            {documents.length > 0 && (
+              <div className="scholarship-documents">
+                <h2 className="text-body font-semibold text-ink-900">Requirement documents</h2>
+                <p className="text-body-sm text-ink-500">
+                  Part of the requirements are in these official documents from the provider.
+                </p>
+                <ul className="mt-2 flex flex-col gap-2">
+                  {documents.map((doc) => (
+                    <li key={doc.url}>
+                      <a
+                        href={doc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="scholarship-document-link"
+                      >
+                        <Icon name="arrowUpRight" className="h-4 w-4" />
+                        <span>{doc.label}</span>
+                        <span className="scholarship-document-host">{safeHost(doc.url)}</span>
+                        <span className="sr-only"> (PDF, opens in a new tab)</span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </section>
 
           <section

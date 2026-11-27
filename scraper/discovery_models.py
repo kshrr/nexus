@@ -48,6 +48,7 @@ class DiscoveryRunStats:
     candidates_updated: int=0
     monitored: int=0
     publications_updated: int=0
+    auto_published: int=0
     unchanged: int=0
     skipped_manual: int=0
     failed: int=0
@@ -60,4 +61,4 @@ class DiscoveryRunStats:
         progress=self.candidates_created+self.candidates_updated+self.monitored
         return ('partial' if progress else 'failed') if self.failed else 'success'
     def summary(self):
-        return f'mode={self.mode} leads={self.leads_found} staged={self.candidates_created+self.candidates_updated} monitored={self.monitored} updated={self.publications_updated} failed={self.failed}'
+        return f'mode={self.mode} leads={self.leads_found} staged={self.candidates_created+self.candidates_updated} auto_published={self.auto_published} monitored={self.monitored} updated={self.publications_updated} failed={self.failed}'

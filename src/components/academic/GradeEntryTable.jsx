@@ -11,6 +11,7 @@ import { pluralise } from '@/lib/format';
  *
  * State is fully controlled by the parent:
  * @param {{
+ *   examTypes?: string[],
  *   subjects: { code: string, name: string }[],
  *   selectedCodes: string[],
  *   grades: Record<string, Partial<Record<string, string>>>,
@@ -20,6 +21,7 @@ import { pluralise } from '@/lib/format';
  * }} props
  */
 export function GradeEntryTable({
+  examTypes = EXAM_TYPES,
   subjects,
   selectedCodes,
   grades,
@@ -33,7 +35,7 @@ export function GradeEntryTable({
   const available = subjects.filter((s) => !selectedCodes.includes(s.code));
 
   const gradeCount = selectedCodes.reduce(
-    (n, code) => n + EXAM_TYPES.filter((et) => grades[code]?.[et]).length,
+    (n, code) => n + examTypes.filter((et) => grades[code]?.[et]).length,
     0
   );
 
@@ -74,9 +76,9 @@ export function GradeEntryTable({
               <thead>
                 <tr className="border-b border-ink-300 text-left text-caption text-ink-500">
                   <th className="py-2 pr-3">Subject</th>
-                  {EXAM_TYPES.map((et) => (
+                  {examTypes.map((et) => (
                     <th key={et} className="px-2 py-2">
-                      {EXAM_TYPE_LABELS[et]}
+                      {examTypes.length === 1 ? 'SPM grade' : EXAM_TYPE_LABELS[et]}
                     </th>
                   ))}
                   <th className="py-2" />
@@ -88,7 +90,7 @@ export function GradeEntryTable({
                     <td className="py-2 pr-3 font-medium text-ink-900">
                       {byCode[code]?.name ?? code}
                     </td>
-                    {EXAM_TYPES.map((et) => (
+                    {examTypes.map((et) => (
                       <td key={et} className="px-2 py-1.5">
                         <select
                           aria-label={`${byCode[code]?.name ?? code} — ${EXAM_TYPE_LABELS[et]}`}
@@ -133,11 +135,15 @@ export function GradeEntryTable({
                     Remove
                   </button>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {EXAM_TYPES.map((et) => (
+                <div
+                  className={
+                    examTypes.length === 1 ? 'grid grid-cols-1 gap-2' : 'grid grid-cols-3 gap-2'
+                  }
+                >
+                  {examTypes.map((et) => (
                     <Select
                       key={et}
-                      label={EXAM_TYPE_LABELS[et]}
+                      label={examTypes.length === 1 ? 'SPM grade' : EXAM_TYPE_LABELS[et]}
                       value={grades[code]?.[et] ?? ''}
                       options={gradeOptions}
                       onChange={(e) => onGradeChange(code, et, e.target.value)}

@@ -97,7 +97,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const signUp = useCallback(async ({ email, password, fullName, consentVersion }) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -109,7 +109,14 @@ export function AuthProvider({ children }) {
         },
       },
     });
-    return { error: error ? normaliseError(error) : null };
+    if (error) return { error: normaliseError(error) };
+    // For an email that already has a confirmed account, Supabase answers as if sign-up worked
+    // (to avoid revealing which emails exist) but returns a user with no identities and sends
+    // no code. Treat that as a duplicate instead of sending the student to /verify.
+    if (Array.isArray(data?.user?.identities) && data.user.identities.length === 0) {
+      return { error: { code: 'user_already_exists', message: 'User already registered' } };
+    }
+    return { error: null };
   }, []);
 
   const verifyOtp = useCallback(async (email, token) => {

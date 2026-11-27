@@ -63,7 +63,7 @@ describe('useProfile.updateProfile — authorization / ownership at the client l
 });
 
 describe('useProfile.completeProfileSetup', () => {
-  it('sets profile_completed and persists the four profile fields', async () => {
+  it('sets profile_completed and persists the profile fields', async () => {
     const { result } = renderHook(() => useProfile());
     await act(async () => {
       await result.current.completeProfileSetup({
@@ -78,12 +78,57 @@ describe('useProfile.completeProfileSetup', () => {
       education_level: 'stpm',
       career_goal: null,
       target_industry: 'Information Technology',
+      nationality: null, // optional: not answered
+      birth_year: null,
+      household_income_band: null,
       profile_completed: true,
     });
     expect(h.eqAfterUpdate).toHaveBeenCalledWith('id', 'user-1');
   });
 
-  it('writes grades only for SPM students, then recomputes strengths in SQL', async () => {
+  it('persists an answered nationality', async () => {
+    const { result } = renderHook(() => useProfile());
+    await act(async () => {
+      await result.current.completeProfileSetup({
+        fullName: 'Kauthar',
+        educationLevel: 'stpm',
+        nationality: 'malaysian',
+      });
+    });
+    expect(h.update).toHaveBeenCalledWith(expect.objectContaining({ nationality: 'malaysian' }));
+  });
+
+  it('saves the optional year of birth and household income band', async () => {
+    const { result } = renderHook(() => useProfile());
+    await act(async () => {
+      await result.current.completeProfileSetup({
+        fullName: 'Aina',
+        educationLevel: 'spm',
+        birthYear: '2008',
+        householdIncomeBand: '2500_5000',
+      });
+    });
+    expect(h.update).toHaveBeenCalledWith(
+      expect.objectContaining({ birth_year: 2008, household_income_band: '2500_5000' })
+    );
+  });
+
+  it('keeps SPM results for students who have moved on, because scholarship checks use them', async () => {
+    const { result } = renderHook(() => useProfile());
+    await act(async () => {
+      await result.current.completeProfileSetup({
+        fullName: 'Aina',
+        educationLevel: 'stpm',
+        grades: [{ subjectCode: 'MATH', examType: 'spm_actual', grade: 'B+' }],
+      });
+    });
+    expect(h.upsert).toHaveBeenCalledWith(
+      [{ user_id: 'user-1', subject_code: 'MATH', exam_type: 'spm_actual', grade: 'B+' }],
+      { onConflict: 'user_id,exam_type,subject_code' }
+    );
+  });
+
+  it('writes the SPM grades given, then recomputes strengths in SQL', async () => {
     const { result } = renderHook(() => useProfile());
     await act(async () => {
       await result.current.completeProfileSetup({

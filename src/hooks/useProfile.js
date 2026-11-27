@@ -23,7 +23,8 @@ import { useAuth } from '@/context/useAuth';
  * @typedef {{ subjectCode: string, examType: string, grade: string }} GradeEntry
  * @typedef {{
  *   fullName: string, educationLevel: string,
- *   careerGoal?: string | null, targetIndustry?: string | null,
+ *   careerGoal?: string | null, targetIndustry?: string | null, nationality?: string | null,
+ *   birthYear?: number | null, householdIncomeBand?: string | null,
  *   grades?: GradeEntry[]
  * }} ProfileSetupInput
  */
@@ -33,7 +34,15 @@ export function useProfile() {
 
   /** Only these columns are ever writable from the client. */
   const pickWritable = (patch) => {
-    const allowed = ['full_name', 'education_level', 'career_goal', 'target_industry'];
+    const allowed = [
+      'full_name',
+      'education_level',
+      'career_goal',
+      'target_industry',
+      'nationality',
+      'birth_year',
+      'household_income_band',
+    ];
     const out = {};
     for (const key of allowed) if (key in patch) out[key] = patch[key];
     return out;
@@ -99,15 +108,35 @@ export function useProfile() {
    * @param {GradeEntry[]} grades
    */
   const replaceGrades = useCallback(
-    async (grades) => {
+    async (grades, options = {}) => {
       if (!user) return { error: { code: 'NO_SESSION', message: 'You are not signed in.' } };
       setSaving(true);
       try {
-        const { error: delError } = await supabase
-          .from('academic_results')
-          .delete()
-          .eq('user_id', user.id);
+        // By default the whole set is replaced. With `examTypes` only those periods are replaced, so
+        // grades from other periods (Form 4, trial) that the editor does not show are kept. Subjects
+        // dropped from the list (`keepSubjects` given) are removed in every period.
+        let removeQuery = supabase.from('academic_results').delete().eq('user_id', user.id);
+        if (options.examTypes) removeQuery = removeQuery.in('exam_type', options.examTypes);
+        const { error: delError } = await removeQuery;
         if (delError) throw delError;
+        if (options.keepSubjects) {
+          const { data: existing, error: readError } = await supabase
+            .from('academic_results')
+            .select('subject_code')
+            .eq('user_id', user.id);
+          if (readError) throw readError;
+          const dropped = [...new Set((existing ?? []).map((row) => row.subject_code))].filter(
+            (code) => !options.keepSubjects.includes(code)
+          );
+          if (dropped.length) {
+            const { error: dropError } = await supabase
+              .from('academic_results')
+              .delete()
+              .eq('user_id', user.id)
+              .in('subject_code', dropped);
+            if (dropError) throw dropError;
+          }
+        }
 
         const rows = grades
           .filter((g) => g.grade)
@@ -134,7 +163,16 @@ export function useProfile() {
   );
 
   const completeProfileSetup = useCallback(
-    async ({ fullName, educationLevel, careerGoal, targetIndustry, grades }) => {
+    async ({
+      fullName,
+      educationLevel,
+      careerGoal,
+      targetIndustry,
+      nationality,
+      birthYear,
+      householdIncomeBand,
+      grades,
+    }) => {
       if (!user) return { error: { code: 'NO_SESSION', message: 'You are not signed in.' } };
       setSaving(true);
       try {
@@ -145,12 +183,15 @@ export function useProfile() {
             education_level: educationLevel,
             career_goal: careerGoal?.trim() || null,
             target_industry: targetIndustry?.trim() || null,
+            nationality: nationality || null,
+            birth_year: birthYear ? Number(birthYear) : null,
+            household_income_band: householdIncomeBand || null,
             profile_completed: true,
           })
           .eq('id', user.id);
         if (error) throw error;
 
-        if (educationLevel === 'spm' && grades?.length) {
+        if (grades?.length) {
           const { error: gradeError } = await saveGrades(grades);
           if (gradeError) throw new Error(gradeError.message);
         }

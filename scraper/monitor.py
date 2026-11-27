@@ -1,6 +1,6 @@
 """Refresh only programmes selected by admins. Never publish new discoveries."""
 from datetime import datetime,timezone
-from .discovery import fetch_document
+from .discovery import fetch_document, pdf_fetcher
 from .discovery_extract import extract_candidates
 from .public_http import FetchError
 from .db import redact
@@ -13,7 +13,7 @@ def run_monitoring(db,fetcher,stats,budget,max_pages):
         try:
             document=fetch_document(fetcher,url,budget)
             if document is None: continue
-            extracted=extract_candidates(document,None,datetime.now(timezone.utc))
+            extracted=extract_candidates(document,None,datetime.now(timezone.utc),pdf_fetcher(fetcher,budget))
             identities={selected['identity_key'],*selected.get('aliases',[])}
             candidate=next((item for item in extracted if item.identity_key in identities),None)
             if candidate is None:

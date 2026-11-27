@@ -1,0 +1,259 @@
+/* Profile setup and profile & settings: white, dark blue and orange with rounded edges. */
+.pf {
+  --pf-ink: #0a2342;
+  --pf-text-2: #4b5d76;
+  --pf-orange: #f26a21;
+  --pf-orange-text: #c2480a;
+  --pf-orange-soft: #fff0e6;
+  --pf-tint: #f3f6fb;
+  --pf-line: #dde5f0;
+  display: grid;
+  gap: 22px;
+  font-family: 'Barlow', system-ui, sans-serif;
+  color: var(--pf-ink);
+}
+.pf :focus-visible {
+  outline: 3px solid var(--pf-orange);
+  outline-offset: 3px;
+}
+
+/* Title section */
+.pf-hero {
+  position: relative;
+  padding: 18px 34px 30px;
+  border-radius: 28px;
+  color: #fff;
+  background:
+    radial-gradient(520px 260px at 100% 0%, rgba(242, 106, 33, 0.34), transparent 70%),
+    radial-gradient(480px 280px at 0% 100%, rgba(120, 170, 255, 0.26), transparent 70%),
+    linear-gradient(135deg, #0a2342 0%, #123a6b 62%, #1a4d8c 100%);
+  overflow: hidden;
+}
+.pf-hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.05) 0 1px,
+    transparent 1px 110px
+  );
+  pointer-events: none;
+}
+.pf-hero > * {
+  position: relative;
+}
+.pf .pf-hero h1 {
+  margin: 0 0 6px;
+  font-family: 'Barlow', system-ui, sans-serif;
+  font-size: clamp(32px, 4vw, 48px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  color: #fff;
+}
+.pf-hero p {
+  margin: 0;
+  max-width: 46ch;
+  font-size: 18px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* The form panel */
+.pf-panel {
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  padding: 30px 32px 28px;
+  border: 1px solid var(--pf-line);
+  border-radius: 26px;
+  background: #fff;
+  box-shadow: 0 24px 40px -34px rgba(10, 35, 66, 0.5);
+}
+
+/* Headings and text inside */
+.pf h2,
+.pf h3,
+.pf h4 {
+  font-family: 'Barlow', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--pf-ink);
+}
+.pf [class*='text-ink-700'] {
+  color: var(--pf-text-2);
+}
+.pf [class*='text-ink-500'] {
+  color: #6a7b93;
+}
+.pf a[class*='text-pine-700'],
+.pf button[class*='text-pine-700'] {
+  color: var(--pf-orange-text);
+  font-weight: 600;
+}
+
+/* Labels and fields */
+.pf label,
+.pf legend {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--pf-ink);
+}
+.pf input:not([type='radio']):not([type='checkbox']):not([type='file']),
+.pf select {
+  min-height: 46px;
+  border: 1px solid #cfd9e8;
+  border-radius: 12px;
+  background-color: #fff;
+  color: var(--pf-ink);
+  font-family: inherit;
+  font-size: 16px;
+}
+.pf input:not([type='radio']):not([type='checkbox']):not([type='file']):focus,
+.pf select:focus {
+  border-color: var(--pf-orange);
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(242, 106, 33, 0.18);
+}
+.pf input[type='radio'],
+.pf input[type='checkbox'] {
+  accent-color: var(--pf-orange);
+}
+/* Choice cards */
+.pf fieldset label {
+  border: 1px solid var(--pf-line);
+  border-radius: 16px;
+  background: #fff;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+.pf fieldset label:hover {
+  border-color: #b9c8de;
+}
+.pf fieldset label:has(input:checked) {
+  border-color: var(--pf-orange);
+  background: var(--pf-orange-soft);
+}
+
+/* Buttons */
+.pf button[class*='bg-pine-700'] {
+  border: 0;
+  border-radius: 99px;
+  background: var(--pf-ink);
+  color: #fff;
+  font-family: inherit;
+  font-weight: 600;
+  box-shadow: none;
+  transition: background-color 180ms ease;
+}
+.pf button[class*='bg-pine-700']:hover:not(:disabled) {
+  background: var(--pf-orange);
+  box-shadow: none;
+}
+.pf button[class*='bg-surface'][class*='border-ink-300'] {
+  border: 2px solid var(--pf-ink);
+  border-radius: 99px;
+  background: #fff;
+  color: var(--pf-ink);
+  font-weight: 600;
+}
+.pf button[class*='bg-surface'][class*='border-ink-300']:hover:not(:disabled) {
+  border-color: var(--pf-orange);
+  background: var(--pf-orange-soft);
+}
+
+/* Steps */
+.pf ol span[class*='rounded-pill'] {
+  width: 30px;
+  height: 30px;
+  border-color: #cfd9e8;
+  font-family: 'Barlow Condensed', 'Barlow', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+}
+.pf ol span[class*='rounded-pill'][class*='bg-pine-700'] {
+  border-color: var(--pf-ink);
+  background: var(--pf-ink);
+  color: #fff;
+}
+.pf ol span[class*='rounded-pill'][class*='border-pine-700']:not([class*='bg-pine-700']) {
+  border-color: var(--pf-orange);
+  color: var(--pf-orange-text);
+}
+.pf ol [class*='bg-ink-300'] {
+  background: var(--pf-line);
+}
+.pf [class*='bg-pine-700'][style] {
+  background: var(--pf-orange);
+}
+
+/* Tabs */
+.pf [role='tablist'] {
+  gap: 8px;
+  padding-bottom: 4px;
+  border: 0;
+}
+.pf [role='tab'] {
+  padding: 9px 20px;
+  border: 1px solid var(--pf-line);
+  border-radius: 99px;
+  background: #fff;
+  color: var(--pf-ink);
+  font-size: 16px;
+  font-weight: 600;
+}
+.pf [role='tab']:hover {
+  border-color: var(--pf-orange);
+}
+.pf [role='tab'][aria-selected='true'] {
+  border-color: var(--pf-ink);
+  background: var(--pf-ink);
+  color: #fff;
+}
+
+/* Cards */
+.pf [class*='rounded-card'] {
+  border-color: var(--pf-line);
+  border-radius: 24px;
+  background-color: #fff;
+}
+.pf [class*='rounded-card'] > div[class*='border-b'] {
+  border-color: var(--pf-line);
+}
+.pf [class*='rounded-card'] h3 {
+  font-size: 22px;
+}
+.pf [class*='border-pine-100'][class*='bg-pine-50'] {
+  background: var(--pf-tint);
+  border-color: var(--pf-line);
+}
+.pf [role='alert'][class*='border-l'],
+.pf [class*='rounded-card'][role='alert'],
+.pf [role='alert'] {
+  border-radius: 14px;
+}
+
+/* Tables and grade entry */
+.pf table {
+  border-radius: 14px;
+}
+.pf thead th {
+  font-family: 'Barlow', system-ui, sans-serif;
+  color: var(--pf-ink);
+}
+
+@media (max-width: 767px) {
+  .pf-hero {
+    padding: 14px 22px 24px;
+    border-radius: 22px;
+  }
+  .pf-panel {
+    padding: 22px 18px 22px;
+    border-radius: 22px;
+  }
+  .pf [role='tab'] {
+    padding: 8px 16px;
+    font-size: 15px;
+  }
+}

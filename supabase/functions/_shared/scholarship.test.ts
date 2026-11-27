@@ -6,6 +6,7 @@ import { describe, it, expect } from 'vitest';
 import {
   deadlineUrgency,
   evaluateCriterion,
+  inferRule,
   matchAll,
   matchScholarship,
   rankMatches,
@@ -55,7 +56,11 @@ function scholarship(overrides: Partial<ScholarshipRow> = {}): ScholarshipRow {
 // ---------------------------------------------------------------------------
 describe('is_checkable = false — the third state (§10.6, ui-spec §3.11)', () => {
   it('reports unknown, never a failure', () => {
-    const c = crit({ criterion_type: 'other', label: 'Leadership experience', is_checkable: false });
+    const c = crit({
+      criterion_type: 'other',
+      label: 'Leadership experience',
+      is_checkable: false,
+    });
     const res = evaluateCriterion(c, profile());
     expect(res.status).toBe('unknown');
     expect(res.status).not.toBe('unsatisfied');
@@ -74,13 +79,80 @@ describe('is_checkable = false — the third state (§10.6, ui-spec §3.11)', ()
 });
 
 describe('criterion types with no collection point (ui-spec §9.1)', () => {
-  it.each(['citizenship', 'age'] as const)(
-    'reports %s as unknown rather than guessing',
-    (type) => {
-      const res = evaluateCriterion(crit({ criterion_type: type, value: 'MY' }), profile());
+  it('reports age as unknown rather than guessing', () => {
+    const c = crit({ criterion_type: 'age', operator: 'lte', value: 19 });
+    expect(evaluateCriterion(c, profile()).status).toBe('unknown');
+  });
+});
+
+describe('citizenship — optional self-declared nationality (migration 0036)', () => {
+  const c = crit({ criterion_type: 'citizenship', value: 'MY', label: 'Malaysian citizen' });
+  it('is unknown, with a prompt, when the student has not answered', () => {
+    const res = evaluateCriterion(c, profile());
+    expect(res.status).toBe('unknown');
+    expect(res.hint).toMatch(/add your nationality/i);
+  });
+  it('is satisfied for a Malaysian student', () => {
+    expect(evaluateCriterion(c, profile({ nationality: 'malaysian' })).status).toBe('satisfied');
+  });
+  it('is unsatisfied for a non-Malaysian student', () => {
+    expect(evaluateCriterion(c, profile({ nationality: 'non_malaysian' })).status).toBe(
+      'unsatisfied'
+    );
+  });
+  it('stays unknown when the criterion is not checkable', () => {
+    const off = crit({ criterion_type: 'citizenship', value: 'MY', is_checkable: false });
+    expect(evaluateCriterion(off, profile({ nationality: 'malaysian' })).status).toBe('unknown');
+  });
+});
+
+describe('min_grade — count of subjects at or above a grade', () => {
+  // profile(): MATH 8 (A), ADD_MATH 7 (A-), PHYSICS 6 (B+), BIOLOGY 3 (C)
+  const count = (n: number, grade: string) =>
+    crit({ criterion_type: 'min_grade', operator: 'gte', value: { count: n, grade } });
+  it('counts subjects at the grade or better', () => {
+    expect(evaluateCriterion(count(2, 'A-'), profile()).status).toBe('satisfied');
+  });
+  it('fails with how many were reached', () => {
+    const res = evaluateCriterion(count(8, 'A'), profile());
+    expect(res.status).toBe('unsatisfied');
+    expect(res.hint).toBe('You have 1 of the 8 subjects needed.');
+  });
+  it('counts credits (C or better)', () => {
+    expect(evaluateCriterion(count(4, 'C'), profile()).status).toBe('satisfied');
+  });
+  it('asks for results when none are recorded', () => {
+    expect(evaluateCriterion(count(5, 'C'), profile({ subjectPoints: {} })).status).toBe(
+      'unsatisfied'
+    );
+  });
+  it('treats a malformed shape as unknown', () => {
+    expect(evaluateCriterion(count(0, 'Z'), profile()).status).toBe('unknown');
+  });
+});
+
+describe('SPM rules that another exam can also meet (alt)', () => {
+  const credits = crit({
+    criterion_type: 'min_grade',
+    operator: 'gte',
+    value: { count: 5, grade: 'C', alt: true },
+  });
+  const bm = crit({
+    criterion_type: 'subject_grade',
+    operator: 'gte',
+    value: { subject: 'BM', grade: 'C', alt: true },
+  });
+  it('is unknown, not a failure, for a student with no SPM results', () => {
+    for (const c of [credits, bm]) {
+      const res = evaluateCriterion(c, profile({ subjectPoints: {} }));
       expect(res.status).toBe('unknown');
+      expect(res.hint).toMatch(/another exam/i);
     }
-  );
+  });
+  it('is checked normally once SPM results are recorded', () => {
+    expect(evaluateCriterion(credits, profile()).status).toBe('unsatisfied'); // 4 credits
+    expect(evaluateCriterion(bm, profile({ subjectPoints: { BM: 5 } })).status).toBe('satisfied');
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -114,12 +186,20 @@ describe('education_level', () => {
 
 describe('field_of_study', () => {
   it('matches against the recommended course fields', () => {
-    const c = crit({ criterion_type: 'field_of_study', operator: 'in', value: ['Computer Science'] });
+    const c = crit({
+      criterion_type: 'field_of_study',
+      operator: 'in',
+      value: ['Computer Science'],
+    });
     expect(evaluateCriterion(c, profile()).status).toBe('satisfied');
   });
 
   it('matches against the stated target industry', () => {
-    const c = crit({ criterion_type: 'field_of_study', operator: 'contains', value: 'information' });
+    const c = crit({
+      criterion_type: 'field_of_study',
+      operator: 'contains',
+      value: 'information',
+    });
     expect(evaluateCriterion(c, profile({ recommendedFields: [] })).status).toBe('satisfied');
   });
 
@@ -169,7 +249,11 @@ describe('subject_grade', () => {
   });
 
   it('reports unknown when the criterion itself is malformed', () => {
-    const c = crit({ criterion_type: 'subject_grade', operator: 'gte', value: { subject: 'MATH' } });
+    const c = crit({
+      criterion_type: 'subject_grade',
+      operator: 'gte',
+      value: { subject: 'MATH' },
+    });
     expect(evaluateCriterion(c, profile()).status).toBe('unknown');
   });
 });
@@ -329,8 +413,21 @@ describe('matchAll', () => {
       scholarship({ id: 's-2', field_of_study: ['Computer Science'] }),
     ];
     const criteria = new Map([
-      ['s-1', [crit({ criterion_type: 'education_level', operator: 'eq', value: 'diploma', label: 'Diploma' })]],
-      ['s-2', [crit({ criterion_type: 'education_level', operator: 'eq', value: 'spm', label: 'SPM' })]],
+      [
+        's-1',
+        [
+          crit({
+            criterion_type: 'education_level',
+            operator: 'eq',
+            value: 'diploma',
+            label: 'Diploma',
+          }),
+        ],
+      ],
+      [
+        's-2',
+        [crit({ criterion_type: 'education_level', operator: 'eq', value: 'spm', label: 'SPM' })],
+      ],
     ]);
     const out = matchAll(rows, criteria, profile());
     expect(out[0].scholarship_id).toBe('s-2');
@@ -373,5 +470,100 @@ describe('deadlineUrgency — §3.4.2 thresholds, do not change (AC-30)', () => 
 
   it('returns none for an unparseable date', () => {
     expect(deadlineUrgency('not-a-date', now)).toBe('none');
+  });
+});
+
+describe('plain-text conditions read from the profile', () => {
+  const text = (label: string) => crit({ criterion_type: 'other', label, is_checkable: false });
+  const run = (label: string, p: Partial<StudentEligibilityProfile> = {}) =>
+    evaluateCriterion(text(label), profile({ currentYear: 2026, ...p }));
+
+  it('reads "Aged 25 years or below" against the year of birth', () => {
+    expect(run('Aged 25 years or below.', { birthYear: 2005 }).status).toBe('satisfied');
+    expect(run('Aged 25 years or below.', { birthYear: 1995 }).status).toBe('unsatisfied');
+    // Born in 2000: 25 or 26 this year, depending on the birthday, so it cannot be told.
+    expect(run('Aged 25 years or below.', { birthYear: 2000 }).status).toBe('unknown');
+    const missing = run('Aged 25 years or below.', { birthYear: null });
+    expect(missing.status).toBe('unknown');
+    expect(missing.hint).toMatch(/year of birth in your profile/i);
+  });
+
+  it('reads the age limit in English and Malay', () => {
+    expect(inferRule('Aged 25 years old and below.')).toEqual({ kind: 'age_max', limit: 25 });
+    expect(inferRule('Berumur tidak melebihi 30 tahun pada tahun permohonan')).toEqual({
+      kind: 'age_max',
+      limit: 30,
+    });
+    expect(inferRule('General condition: Aged below 35 years')).toEqual({
+      kind: 'age_max',
+      limit: 35,
+    });
+  });
+
+  it('checks household income against the income band', () => {
+    const label = 'Total monthly gross household income of RM5,000 and below.';
+    expect(run(label, { householdIncomeBand: '2500_5000' }).status).toBe('satisfied');
+    expect(run(label, { householdIncomeBand: 'under_2500' }).status).toBe('satisfied');
+    expect(run(label, { householdIncomeBand: '5000_7500' }).status).toBe('unsatisfied');
+    expect(run(label, { householdIncomeBand: 'over_15000' }).status).toBe('unsatisfied');
+    expect(run(label, { householdIncomeBand: null }).hint).toMatch(/household income range/i);
+    // A band that straddles the limit cannot be called either way.
+    expect(
+      run('Household income not exceeding RM6,000 is required, RM6,000 and below', {
+        householdIncomeBand: '5000_7500',
+      }).status
+    ).toBe('unknown');
+  });
+
+  it('counts SPM credits (grade C or better) from the SPM results added', () => {
+    const label = 'Obtained minimum three (3) credits in SPM.';
+    expect(inferRule(label)).toEqual({ kind: 'spm_credits', count: 3 });
+    expect(
+      run(label, { subjectPoints: { MATH: 8, ADD_MATH: 4, PHYSICS: 3, BIOLOGY: 2 } }).status
+    ).toBe('satisfied');
+    const short = run(label, { subjectPoints: { MATH: 8, BIOLOGY: 2 } });
+    expect(short.status).toBe('unsatisfied');
+    expect(short.hint).toMatch(/1 of the 3 credits/);
+    expect(run(label, { subjectPoints: {} }).status).toBe('unknown');
+  });
+
+  it('checks a bare "Malaysian." condition against nationality', () => {
+    expect(run('Malaysian.', { nationality: 'malaysian' }).status).toBe('satisfied');
+    expect(run('Malaysian.', { nationality: 'non_malaysian' }).status).toBe('unsatisfied');
+    expect(run('Malaysian.', { nationality: null }).status).toBe('unknown');
+  });
+
+  it('leaves conditions it does not understand as "can’t check"', () => {
+    const result = run('Free from chronic illness and able to complete the programme');
+    expect(result.status).toBe('unknown');
+    expect(result.hint).toMatch(/can't check/i);
+  });
+
+  it('counts the new checks in the score, so the checklist can read met and not met', () => {
+    const match = matchScholarship(
+      {
+        id: 's',
+        name: 'S',
+        provider: 'P',
+        deadline: null,
+        status: 'active',
+        field_of_study: [],
+        education_levels: [],
+      },
+      [
+        text('Aged 25 years or below.'),
+        text('Total monthly gross household income of RM5,000 and below.'),
+        text('Obtained minimum three (3) credits in SPM.'),
+        crit({
+          criterion_type: 'education_level',
+          operator: 'in',
+          value: ['spm'],
+          label: 'Education level: SPM',
+        }),
+      ],
+      profile({ currentYear: 2026, birthYear: 2008, householdIncomeBand: '2500_5000' })
+    );
+    expect(match.checkable_count).toBe(4);
+    expect(match.satisfied_count).toBe(4);
   });
 });

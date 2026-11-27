@@ -20,6 +20,8 @@ const FILES = [
   '0006_rls_policies.sql',
   '0007_seed_reference_data.sql',
   '0008_auth_consent.sql',
+  '0036_profile_nationality.sql',
+  '0039_profile_age_income.sql',
 ];
 
 const results = [];
@@ -155,6 +157,41 @@ await asUser(db, A);
 await reject(
   'consent_records cannot be deleted (append-only)',
   db.query(`delete from public.consent_records where user_id='${A}'`)
+);
+
+// --- optional self-declared nationality (migration 0036) ---------------
+await asUser(db, A);
+await ok('A can record own nationality', db.query(`update public.profiles set nationality='malaysian' where id='${A}'`));
+await asUser(db, A);
+await reject(
+  'nationality accepts only malaysian / non_malaysian',
+  db.query(`update public.profiles set nationality='MY' where id='${A}'`)
+);
+await asUser(db, B);
+await rows("B cannot read A's nationality", db.query(`select nationality from public.profiles where id='${A}'`), 0);
+await asUser(db, A);
+await ok('A can clear own nationality (prefer not to say)', db.query(`update public.profiles set nationality=null where id='${A}'`));
+
+// --- optional year of birth and household income band (migration 0039) --
+await asUser(db, A);
+await ok(
+  'A can record own year of birth and income band',
+  db.query(`update public.profiles set birth_year=2008, household_income_band='2500_5000' where id='${A}'`)
+);
+await asUser(db, A);
+await reject('an implausible year of birth is refused', db.query(`update public.profiles set birth_year=1850 where id='${A}'`));
+await asUser(db, A);
+await reject('an unknown income band is refused', db.query(`update public.profiles set household_income_band='rich' where id='${A}'`));
+await asUser(db, B);
+await rows(
+  "B cannot read A's year of birth or income",
+  db.query(`select birth_year, household_income_band from public.profiles where id='${A}'`),
+  0
+);
+await asUser(db, A);
+await ok(
+  'A can clear both (prefer not to say)',
+  db.query(`update public.profiles set birth_year=null, household_income_band=null where id='${A}'`)
 );
 
 // --- account deletion cascades (FR-SEC-11 groundwork) ------------------

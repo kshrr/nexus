@@ -1,11 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { Icon, Skeleton } from '@/components/ui';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { ErrorState } from '@/components/feedback';
 import { CourseFilters } from '@/components/course/CourseFilters';
 import { CourseBrowseCard } from '@/components/course/CourseBrowseCard';
 import { useCourses, useCourseFacets } from '@/hooks/useCourses';
 import { COURSE_PAGE_SIZE } from '@/lib/courseCatalogue';
+import '@fontsource/barlow/400.css';
+import '@fontsource/barlow/500.css';
+import '@fontsource/barlow/600.css';
+import '@fontsource/barlow/700.css';
+import '@fontsource/barlow-condensed/700.css';
 import '@/styles/course-catalogue.css';
 
 const FILTER_KEYS = ['state', 'university', 'field', 'pathway', 'type', 'duration'];
@@ -59,75 +65,59 @@ export default function CourseList() {
 
   return (
     <div className="course-directory course-design">
-      <div className="course-hero-band">
+      <section className="course-hero-band" aria-labelledby="course-page-title">
         <div className="course-shell">
-          <section className="course-directory-hero">
-            <div>
-              <p className="course-eyebrow">
-                <span className="course-station-mark">N</span> NEXUS CENTRAL / COURSE DIRECTORY
-              </p>
-              <h1>
+          <Breadcrumbs tone="light" />
+          <div className="course-hero">
+            <div className="course-hero-text">
+              <h1 id="course-page-title">
                 Find a course.
                 <br />
                 <span>Choose your direction.</span>
               </h1>
-              <p className="course-hero-copy">
-                Explore university programmes across Malaysia. Start with what interests you, then
-                find a place to take it further.
-              </p>
-              <div className="course-hero-route" aria-hidden="true">
-                <i />
-                <span>Explore</span>
-                <b />
-                <i />
-                <span>Compare</span>
-                <b />
-                <i />
-                <span>Your next chapter</span>
-              </div>
+              <p className="course-hero-copy">Explore programmes across Malaysia.</p>
             </div>
-            <div className="course-directory-ticket">
-              <div className="course-ticket-top">
-                <span>YOUR NEXT STOP</span>
-                <Icon name="book" className="h-5 w-5" />
-              </div>
-              <p>Study possibilities.</p>
-              <span className="course-ticket-note">One directory. A world of directions.</span>
-              <div className="course-ticket-counts">
-                <div>
+            <ul className="course-stats" aria-label="Directory size">
+              <li className="is-peach">
+                <div className="ticket-main">
+                  <span>Courses</span>
                   <strong>{facets.loading || facets.error ? '—' : facets.total}</strong>
-                  <span>published courses</span>
                 </div>
-                <div>
+                <div className="ticket-stub" aria-hidden="true">
+                  <b>ADMIT</b>
+                  <i />
+                </div>
+              </li>
+              <li className="is-sky">
+                <div className="ticket-main">
+                  <span>Universities</span>
                   <strong>
                     {facets.loading || facets.error ? '—' : facets.universities.length}
                   </strong>
-                  <span>universities</span>
                 </div>
-              </div>
-              <div className="course-ticket-foot">
-                <span>NEXUS / MALAYSIA</span>
-                <span className="course-barcode" aria-hidden="true" />
-              </div>
-            </div>
-          </section>
+                <div className="ticket-stub" aria-hidden="true">
+                  <b>ADMIT</b>
+                  <i />
+                </div>
+              </li>
+            </ul>
+          </div>
+          <div className="course-search-bar">
+            <Icon name="search" className="h-5 w-5" />
+            <label htmlFor="course-search" className="sr-only">
+              Search course name
+            </label>
+            <input
+              id="course-search"
+              type="search"
+              placeholder="Search Computer Science, Medicine, Architecture…"
+              value={filters.search}
+              onChange={(event) => change('q', event.target.value)}
+            />
+          </div>
         </div>
-      </div>
+      </section>
       <div className="course-shell">
-        <div className="course-search-bar">
-          <Icon name="search" className="h-5 w-5" />
-          <label htmlFor="course-search" className="sr-only">
-            Search course name
-          </label>
-          <input
-            id="course-search"
-            type="search"
-            placeholder="Search Computer Science, Medicine, Architecture…"
-            value={filters.search}
-            onChange={(event) => change('q', event.target.value)}
-          />
-          <span>Find your next stop</span>
-        </div>
         <div className="course-directory-body">
           <aside className={'course-filters' + (filtersOpen ? ' is-open' : '')}>
             <button
@@ -142,16 +132,12 @@ export default function CourseList() {
             <div id="course-filter-panel" className="course-filter-panel">
               <div className="course-filter-title">
                 <div>
-                  <p className="course-kicker">MAKE IT YOURS</p>
                   <h2>Filter your options</h2>
                 </div>
                 <button onClick={clear} disabled={!activeCount}>
                   Reset
                 </button>
               </div>
-              <p className="course-filter-intro">
-                A few preferences can help you find your direction.
-              </p>
               {facets.error ? (
                 <div role="alert" className="course-inline-error">
                   <p>Filter options couldn’t be loaded.</p>
@@ -168,7 +154,6 @@ export default function CourseList() {
           >
             <div className="course-results-header">
               <div>
-                <p className="course-kicker">EXPLORE YOUR OPTIONS</p>
                 <h2 id="course-results-title">Courses to consider</h2>
                 <p role="status">
                   {courses.loading
@@ -286,9 +271,8 @@ export default function CourseList() {
               </div>
             )}
             <p className="course-directory-note">
-              <Icon name="book" className="h-4 w-4" /> Open a course for its complete published
-              details and university source. Entry requirements and intake information should be
-              confirmed with the institution.
+              <Icon name="book" className="h-4 w-4" /> Confirm entry requirements and intakes with
+              the institution.
             </p>
           </section>
         </div>

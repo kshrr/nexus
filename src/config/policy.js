@@ -3,7 +3,7 @@
  * a new version prompts re-consent. Stored with every consent record
  * (FR-SEC-10 / NFR05).
  */
-export const PRIVACY_POLICY_VERSION = '2026-01-01';
+export const PRIVACY_POLICY_VERSION = '2026-11-25'; // + optional nationality, on-device slip OCR
 
 /**
  * Chatbot input cap (architecture.md §12.1 / §15). Mirrored server-side in

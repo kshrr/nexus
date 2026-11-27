@@ -63,6 +63,37 @@ class BaseParser(ABC):
         list only if the page is valid but genuinely holds nothing to store.
         """
 
+    def attachment(self, html: str, url: str) -> str | None:
+        """An official PDF on this page that holds the programme details.
+
+        Most providers publish details in HTML and return None. A provider whose
+        page only links an advertisement PDF (Yayasan Sabah on PTPS) returns that
+        PDF's absolute https URL; the pipeline fetches it with the same robots,
+        size and time limits and calls parse_attachment instead of parse. The
+        record's source stays this HTML page, so next year's PDF is followed from
+        the same place.
+        """
+        return None
+
+    def parse_attachment(self, pages, html: str, url: str) -> list[ScrapedScholarship]:
+        """Extract programmes from the attachment's decoded pages
+        (course_pdf.PdfPage: text plus positioned chunks)."""
+        raise NotImplementedError
+
+    def extract(self, html: str, url: str, fetch_pdf=None) -> list[ScrapedScholarship]:
+        """parse(), or parse_attachment() when the page names a PDF attachment."""
+        from .requirements import structure_criteria  # avoids an import cycle
+
+        attachment = self.attachment(html, url)
+        if not attachment:
+            records = self.parse(html, url)
+        elif fetch_pdf is None:
+            raise ValueError("programme details are in a PDF attachment; no PDF fetcher available")
+        else:
+            records = self.parse_attachment(fetch_pdf(attachment).pages, html, url)
+        # Checkable education-level, citizenship and SPM-grade rows (requirements.py).
+        return [structure_criteria(record) for record in records]
+
     def guard(self, urls: list[str]) -> list[str]:
         """Apply the prefix and count limits to discovered URLs.
 

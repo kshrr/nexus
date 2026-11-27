@@ -89,3 +89,24 @@ def test_buffered_body_reads_return_control_for_absolute_deadline():
         if clock[0]>=25:raise FetchError('request timeout')
     with pytest.raises(FetchError,match='timeout'):read_bounded(BufferedReader(Trickled()),'',3000000,deadline)
     assert clock[0]<=25
+
+
+def test_pinned_connection_falls_back_to_ipv4_when_ipv6_is_unreachable(monkeypatch):
+    import socket
+    from scraper.public_http import PinnedHTTPSConnection, ValidatedDestination
+    attempts = []
+    class Raw:
+        def settimeout(self, value): pass
+        def close(self): pass
+    def create_connection(address, timeout):
+        attempts.append(address[0])
+        if ':' in address[0]:
+            raise OSError('network unreachable')
+        return Raw()
+    monkeypatch.setattr(socket, 'create_connection', create_connection)
+    destination = ValidatedDestination('https://www.utem.edu.my/', 'www.utem.edu.my', 443,
+                                       ('2606:4700:20::681a:ea6', '104.26.14.166'))
+    connection = PinnedHTTPSConnection(destination, timeout=10)
+    monkeypatch.setattr(connection._context, 'wrap_socket', lambda raw, server_hostname: raw)
+    connection.connect()
+    assert attempts == ['104.26.14.166']  # IPv4 first; only validated addresses are used

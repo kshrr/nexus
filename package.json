@@ -15,12 +15,13 @@
     "format": "prettier --write \"src/**/*.{js,jsx,css}\"",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:test": "node supabase/tests/schema.test.mjs && node supabase/tests/rls.test.mjs && node supabase/tests/profile.test.mjs && node supabase/tests/findyourpath.test.mjs && node supabase/tests/scholarship.test.mjs && npm run db:test:careers && node supabase/tests/chat.test.mjs && node supabase/tests/scraper.test.mjs && node supabase/tests/scholarship-discovery.test.mjs && node supabase/tests/course-catalogue-sync.test.mjs",
+    "db:test": "node supabase/tests/schema.test.mjs && node supabase/tests/rls.test.mjs && node supabase/tests/profile.test.mjs && node supabase/tests/account.test.mjs && node supabase/tests/findyourpath.test.mjs && node supabase/tests/scholarship.test.mjs && npm run db:test:careers && node supabase/tests/chat.test.mjs && node supabase/tests/scraper.test.mjs && node supabase/tests/scholarship-discovery.test.mjs && node supabase/tests/scholarship-source-documents.test.mjs && node supabase/tests/scholarship-auto-publish.test.mjs && node supabase/tests/course-catalogue-sync.test.mjs && node supabase/tests/course-multi-source.test.mjs",
     "db:test:schema": "node supabase/tests/schema.test.mjs",
+    "db:test:account": "node supabase/tests/account.test.mjs",
     "db:test:rls": "node supabase/tests/rls.test.mjs",
     "db:test:fyp": "node supabase/tests/findyourpath.test.mjs",
     "db:test:scholarship": "node supabase/tests/scholarship.test.mjs",
-    "db:test:careers": "node supabase/tests/career-pathways.test.mjs && node supabase/tests/career-content-evidence.test.mjs && node supabase/tests/career-content-migration.test.mjs && node supabase/tests/career-malaysia.test.mjs",
+    "db:test:careers": "node supabase/tests/career-pathways.test.mjs && node supabase/tests/career-content-evidence.test.mjs && node supabase/tests/career-content-migration.test.mjs && node supabase/tests/career-malaysia.test.mjs && node supabase/tests/career-more.test.mjs",
     "db:test:chat": "node supabase/tests/chat.test.mjs",
     "check:secrets": "node scripts/check-bundle-secrets.mjs",
     "verify": "npm run lint && npm run test && npm run build && npm run check:secrets && npm run db:test",
@@ -29,13 +30,16 @@
     "db:test:courses": "node supabase/tests/course-catalogue-sync.test.mjs && node supabase/tests/course-multi-source.test.mjs"
   },
   "dependencies": {
+    "@fontsource/barlow": "^5.3.0",
+    "@fontsource/barlow-condensed": "^5.3.0",
     "@supabase/supabase-js": "^2.45.4",
     "jspdf": "^4.2.1",
     "motion": "^13.4.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^7.18.3",
-    "recharts": "^2.15.4"
+    "recharts": "^2.15.4",
+    "tesseract.js": "7.0.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

@@ -18,12 +18,13 @@ export default function AdminScholarshipDiscovery() {
   const [search, setSearch] = useState('');
   const [provider, setProvider] = useState('');
   const [reviewState, setReviewState] = useState('all');
+  const [source, setSource] = useState('all');
   const [page, setPage] = useState(1);
   const [review, setReview] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [message, setMessage] = useState('');
   const [actionError, setActionError] = useState('');
-  const catalogue = useScholarshipDiscoveries({ tab, search, provider, reviewState, page });
+  const catalogue = useScholarshipDiscoveries({ tab, search, provider, reviewState, source, page });
   const settings = useScholarshipDiscoverySettings();
   const trigger = useTriggerCrawl();
   const { running } = useCrawlRunning();
@@ -51,6 +52,20 @@ export default function AdminScholarshipDiscovery() {
       setMessage(message);
     }
     return result;
+  }
+  async function ignoreUnsupported() {
+    const count = catalogue.search_total;
+    const ok = window.confirm(
+      `Ignore ${pluralise(count, 'web-search result')}? Programmes from supported providers are not affected. Ignored results stay ignored on later runs and can be restored from the Ignored filter.`
+    );
+    if (!ok) return;
+    const result = await catalogue.ignoreUnsupported();
+    if (result.error) setActionError(result.error.message);
+    else {
+      setActionError('');
+      setMessage(`Ignored ${pluralise(result.data ?? 0, 'web-search result')}.`);
+      setPage(1);
+    }
   }
   const pages = Math.max(1, Math.ceil(catalogue.total / 20));
   return (
@@ -152,7 +167,7 @@ export default function AdminScholarshipDiscovery() {
           </button>
         ))}
       </div>
-      <div className="mb-6 grid gap-4 sm:grid-cols-3">
+      <div className="mb-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Input
           label="Search programmes"
           value={search}
@@ -165,6 +180,16 @@ export default function AdminScholarshipDiscovery() {
           options={[
             { value: '', label: 'All providers' },
             ...catalogue.providers.map((name) => ({ value: name, label: name })),
+          ]}
+        />
+        <Select
+          label="Source"
+          value={source}
+          onChange={(event) => filter(setSource, event.target.value)}
+          options={[
+            { value: 'all', label: 'All sources' },
+            { value: 'supported', label: 'Supported providers' },
+            { value: 'search', label: 'Web search' },
           ]}
         />
         <Select
@@ -195,10 +220,25 @@ export default function AdminScholarshipDiscovery() {
         aria-label={tab === 'discover' ? 'Discover' : 'Added to Nexus'}
       >
         <div className="mb-3 flex justify-between text-body-sm">
-          <p>{pluralise(catalogue.total, 'scholarship')}</p>
-          <button className="text-pine-700 underline" onClick={catalogue.reload}>
-            Reload catalogue
-          </button>
+          <p>
+            {pluralise(catalogue.total, 'scholarship')}
+            {catalogue.supported_total !== undefined &&
+              ` · ${catalogue.supported_total} from supported providers, ${catalogue.search_total} from web search`}
+          </p>
+          <div className="flex flex-wrap items-center gap-4">
+            {tab === 'discover' && catalogue.search_total > 0 && (
+              <button
+                className="text-rust-600 underline disabled:opacity-50"
+                disabled={catalogue.busy}
+                onClick={ignoreUnsupported}
+              >
+                Ignore all web-search results
+              </button>
+            )}
+            <button className="text-pine-700 underline" onClick={catalogue.reload}>
+              Reload catalogue
+            </button>
+          </div>
         </div>
         {catalogue.loading ? (
           <p className="py-12 text-ink-500" role="status">
@@ -211,7 +251,7 @@ export default function AdminScholarshipDiscovery() {
         ) : !catalogue.items.length ? (
           <div className="border-t border-ink-200 py-12">
             <h2 className="text-h3 font-semibold">
-              {search || provider || reviewState !== 'all'
+              {search || provider || reviewState !== 'all' || source !== 'all'
                 ? 'No matching scholarships'
                 : tab === 'added'
                   ? 'No programmes added yet'
@@ -235,6 +275,11 @@ export default function AdminScholarshipDiscovery() {
                   <div className="min-w-0 flex-1">
                     <p className="text-caption text-ink-500">
                       {candidate.provider || 'Provider needs review'}
+                      {candidate.from_supported_provider && (
+                        <span className="ml-2 rounded-sm bg-pine-50 px-1.5 py-0.5 font-semibold text-pine-700">
+                          Supported provider
+                        </span>
+                      )}
                     </p>
                     <h2 className="mt-1 text-body font-semibold">
                       {candidate.name || 'Programme details need review'}

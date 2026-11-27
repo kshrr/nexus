@@ -4,8 +4,6 @@ The local implementation adds `/admin/scholarship-discovery`. Discoveries are ad
 
 ## Before deployment
 
-- This portfolio snapshot stores its manual-only workflow in `scraper/crawler.workflow.example.yml`. Copy it to `.github/workflows/crawler.yml` in your own repository before configuring Actions and crawler dispatch.
-
 - Back up the hosted database and inspect its migration history. The discovery schema expects migrations 0002–0012. Preserve the existing unrelated 0013 career migration; do not deploy unrelated pending migrations automatically.
 - Review and apply `supabase/migrations/0014_scholarship_discovery.sql`, then `0015_scholarship_discovery_operations.sql`, using the project's migration process. Inspect the backfill: only existing crawler-managed active/expired rows with source URLs are enrolled, and no new scholarship examples are seeded. Applying a migration is a distinct hosted action.
 - Deploy `supabase/functions/trigger-crawl` with the existing caller-auth configuration. Confirm server secrets `GITHUB_DISPATCH_TOKEN`, `GITHUB_REPO` (owner/repository), `GITHUB_WORKFLOW_REF`, and optionally `CRAWLER_WORKFLOW_FILE`. The actual workflow branch must contain the updated workflow; do not assume `main` when this checkout is on a feature branch from `master`.
@@ -22,7 +20,7 @@ An admin can edit up to six queries and the catalogue target in Search settings.
 ## First live smoke check
 
 1. Trigger **Refresh from web** in admin discovery. Confirm queued -> running -> finished/partial by the matching request ID. A successful dispatch alone is not a completed run.
-2. Inspect actual catalogue totals, provider variety and source evidence. Providers beyond the four supported parsers are accepted. If fewer than 20 reliable programmes are available, report the yield and review reasons; never fill the gap with fabricated entries.
+2. Inspect actual catalogue totals, provider variety and source evidence. The thirteen supported parsers (JPA, PETRONAS, YSD, Khazanah, MARA, Yayasan TM, Yayasan Tenaga Nasional, Yayasan Sarawak, Yayasan Sabah, BNM, PTPTN, Yayasan Selangor, Maybank) are visited every run; ready programmes from them are published automatically (migration 0031), the rest wait in the queue; providers beyond them are accepted from search and always need an admin's Add to Nexus. If fewer than 20 reliable programmes are available, report the yield and review reasons; never fill the gap with fabricated entries.
 3. Confirm unselected discoveries are absent from the public/student scholarship list and chatbot context. Ready entries can be added directly; incomplete entries require Review details.
 4. Review one real source, application destination, status and deadline. Add it twice or from two admin sessions; confirm one published scholarship/criteria set and the same publication ID.
 5. Run monitoring; confirm selected-source checks, preserved publication identity, crawler management after approval, and changed trustworthy fields. Manual edits, including criteria-only edits, must stay protected. Initial review corrections are stored as explicit overrides. Saving later reviews keeps a pending draft; **Approve updates** applies validated changes and registers an observed moved-source alias. Manually protected publications still require the existing Scholarships editor.
@@ -43,7 +41,7 @@ Fixture DB tests run in PGlite; they do not prove concurrent sessions. Use a sta
 
 ## Troubleshooting
 
-- **Key missing/rejected:** set/check the repository Actions secret and Brave subscription. Broad discovery fails clearly; it does not silently revert to four providers. Monitoring-only remains available in Actions.
+- **Key missing/rejected:** set/check the repository Actions secret and Brave subscription. Broad discovery fails clearly; it does not silently revert to the supported parsers (the known-provider pass is skipped too). Monitoring-only remains available in Actions.
 - **403, robots failure, unsupported PDF/JS:** inspect the official source in the review panel and complete details manually where appropriate. Failed fetches retain published records and never infer closure.
 - **Changed application/source destination:** review and approve the new destination. Until then, publication keeps its last approved link.
 - **Delayed queued refresh:** use Check status/Check logs and inspect Actions queue/configuration/branch. Do not label a delayed job completed.

@@ -124,22 +124,13 @@ export function safeRegisteredCourseSource(value) {
   if (!safe) return null;
   const url = new URL(safe);
   if (url.port && url.port !== '443') return null;
-  for (const [source, definition] of Object.entries(registeredSources)) {
+  for (const definition of Object.values(registeredSources)) {
     const rule = definition.destinations[url.hostname];
     if (!rule) continue;
     const path = url.pathname.replace(/\/$/, '') || '/';
     if (!new RegExp(`^(?:${rule.path})$`, 'i').test(path)) return null;
-    const query = url.search.slice(1);
-    if (!query) return source === 'unimap' && path === '/programme.php' ? null : safe;
-    if (
-      rule.query === 'pid' &&
-      ['/academic-programmes', '/tamhidi'].includes(path) &&
-      /^pid=[1-9][0-9]{0,8}$/.test(query)
-    )
-      return safe;
-    if (rule.query === 'id' && path === '/programme.php' && /^id=UR[0-9]{7}$/.test(query))
-      return safe;
-    return null;
+    // No registered source uses query-identified pages.
+    return url.search ? null : safe;
   }
   return null;
 }

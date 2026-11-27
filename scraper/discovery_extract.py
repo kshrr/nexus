@@ -95,22 +95,28 @@ def _generic(scope,url,organisation,now,lead):
     if lead: evidence['search_lead']={'title':lead.title,'snippet':lead.snippet,'query':lead.query,'freshness':lead.freshness}
     return DiscoveryCandidate(identity,url,key,record,[],evidence,list(dict.fromkeys(reasons)),'needs_review' if reasons else 'ready')
 
-def extract_candidates(document: FetchedDocument,lead: SearchLead | None,now: datetime):
+def extract_candidates(document: FetchedDocument,lead: SearchLead | None,now: datetime,fetch_pdf=None):
     url=canonicalise_url(document.final_url) or document.final_url
     parser=parser_for_url(url)
-    if parser and 'html' in document.content_type.lower():
-        records=parser.parse(document.html,url)
-        if records:
-            output=[]
-            for record in records:
-                row=record.to_row(); row['source_url']=record.source_url
-                reasons=list(record.flags)
-                if not record.education_levels: reasons.append('Confirm education levels')
-                if not record.description: reasons.append('Add programme description')
-                evidence={'official_source':True,'trusted_application':True,'source_url':record.source_url,'extracted_at':now.isoformat(),'parser':parser.source_id,'fields':{'description':{'text':record.description,'source_url':record.source_url}}}
-                crit=[{k:v for k,v in c.to_row('').items() if k!='scholarship_id'} for c in record.criteria]
-                output.append(DiscoveryCandidate(identity_hash(record),record.source_url,record.name,row,crit,evidence,reasons,'needs_review' if reasons else 'ready'))
-            return output
+    # An empty document is the failed-fetch placeholder: a registered parser
+    # would raise on it (inside the caller's error handler), so it goes to the
+    # generic path, which stages an honest needs-review entry.
+    if parser and 'html' in document.content_type.lower() and document.html.strip():
+        records=parser.extract(document.html,url,fetch_pdf)
+        # A registered parser that recognises the page and returns nothing has
+        # deliberately excluded it (MARA post-graduate pages, an index page):
+        # generic extraction must not stage it anyway.
+        if not records: return []
+        output=[]
+        for record in records:
+            row=record.to_row(); row['source_url']=record.source_url
+            reasons=list(record.flags)
+            if not record.education_levels: reasons.append('Confirm education levels')
+            if not record.description: reasons.append('Add programme description')
+            evidence={'official_source':True,'trusted_application':True,'source_url':record.source_url,'extracted_at':now.isoformat(),'parser':parser.source_id,'fields':{'description':{'text':record.description,'source_url':record.source_url}}}
+            crit=[{k:v for k,v in c.to_row('').items() if k!='scholarship_id'} for c in record.criteria]
+            output.append(DiscoveryCandidate(identity_hash(record),record.source_url,record.name,row,crit,evidence,reasons,'needs_review' if reasons else 'ready'))
+        return output
     soup=BeautifulSoup(document.html,'html.parser')
     organisation=_organisation(soup,url)
     for element in soup.select('script,style,nav,header,footer,noscript'): element.decompose()

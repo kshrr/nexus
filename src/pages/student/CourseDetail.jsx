@@ -2,6 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { Badge, Card, Icon, Skeleton } from '@/components/ui';
 import { ErrorState } from '@/components/feedback';
+import { useBreadcrumbLabel } from '@/components/layout/breadcrumbContext';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
+import { logoFor } from '@/components/landing/universityLogos';
 import { CourseRequirementTabs } from '@/components/course/CourseRequirementTabs';
 import { supabase } from '@/lib/supabase';
 import { normaliseError } from '@/lib/api';
@@ -12,6 +15,10 @@ import {
   PATHWAY_LABELS,
   TYPE_LABELS,
 } from '@/lib/courseCatalogue';
+import '@fontsource/barlow/400.css';
+import '@fontsource/barlow/500.css';
+import '@fontsource/barlow/600.css';
+import '@fontsource/barlow/700.css';
 import '@/styles/course-catalogue.css';
 
 export function CourseDetail() {
@@ -21,6 +28,7 @@ export function CourseDetail() {
   const [course, setCourse] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  useBreadcrumbLabel(course?.name);
   const load = useCallback(async () => {
     const version = ++request.current;
     setLoading(true);
@@ -79,9 +87,10 @@ export function CourseDetail() {
           ← Back to courses
         </Link>
         <header className="course-detail-hero">
-          <p className="course-eyebrow">
-            <span className="course-station-mark">N</span> YOUR STUDY DESTINATION
-          </p>
+          <Breadcrumbs tone="light" />
+          {logoFor(course.universities?.name) && (
+            <img className="course-detail-logo" src={logoFor(course.universities?.name)} alt="" />
+          )}
           <Badge className="course-field-tag">{course.field_of_study}</Badge>
           <h1>{course.name}</h1>
           <p className="course-detail-institution">
@@ -159,9 +168,6 @@ export function CourseDetail() {
             title="Requirements & Prerequisites"
             className="course-information-card course-entry-card"
           >
-            <p className="course-section-intro">
-              Explore the complete published guidance for your applicant category and entry route.
-            </p>
             <CourseRequirementTabs
               key={course.id}
               sections={course.entry_requirement_sections}

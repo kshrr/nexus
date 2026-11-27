@@ -13,6 +13,7 @@ import '@/styles/site-chrome.css';
 const searchLinks = [
   { to: '/courses', label: 'Courses', icon: 'book' },
   { to: '/careers', label: 'Careers', icon: 'career' },
+  { to: '/scholarships', label: 'Scholarships', icon: 'scholarship' },
 ];
 
 function HeaderLinks({ label, links, onNavigate }) {
@@ -93,9 +94,6 @@ export function PublicHeader() {
         >
           
           <HeaderLinks label="Search" links={searchLinks} onNavigate={closeNavigation} />
-          <NavLink to="/scholarships" className="public-nav-link" onClick={closeNavigation}>
-            Scholarships
-          </NavLink>
           <NavLink to="/find-your-path" className="public-nav-link" onClick={closeNavigation}>
             Find Your Path
           </NavLink>

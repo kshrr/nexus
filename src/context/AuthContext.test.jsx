@@ -115,6 +115,25 @@ describe('AuthProvider — actions', () => {
     expect(payload.options.emailRedirectTo).toBe(`${window.location.origin}/verify`);
   });
 
+  it('signUp reports an already-registered email even when Supabase hides it behind success', async () => {
+    h.auth.signUp.mockResolvedValueOnce({
+      data: { user: { identities: [] }, session: null },
+      error: null,
+    });
+    const { result } = renderHook(() => useAuth(), { wrapper });
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    let outcome;
+    await act(async () => {
+      outcome = await result.current.signUp({
+        email: 'taken@test.nexus',
+        password: 'nexus2026',
+        fullName: 'Someone Else',
+        consentVersion: '2026-01-01',
+      });
+    });
+    expect(outcome.error?.message).toMatch(/already registered/i);
+  });
+
   it('keeps the website confirmation destination when resending a signup email', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
     await waitFor(() => expect(result.current.loading).toBe(false));

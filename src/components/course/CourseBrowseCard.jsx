@@ -1,12 +1,17 @@
 import { Link } from 'react-router-dom';
 import { Icon } from '@/components/ui';
+import { logoFor } from '@/components/landing/universityLogos';
 import { formatCourseDuration, PATHWAY_LABELS, TYPE_LABELS } from '@/lib/courseCatalogue';
 
 export function CourseBrowseCard({ course, from }) {
   const university = course.universities;
+  const logo = logoFor(university?.name);
   return (
     <article className="course-browse-card">
-      <p className="course-card-university">{university?.name ?? 'Institution not listed'}</p>
+      <div className="course-card-head">
+        <p className="course-card-university">{university?.name ?? 'Institution not listed'}</p>
+        {logo && <img className="course-card-logo" src={logo} alt="" loading="lazy" />}
+      </div>
       <h3>{course.name}</h3>
       <div className="course-card-top">
         <span className="course-field-tag">

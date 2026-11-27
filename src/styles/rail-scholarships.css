@@ -415,6 +415,33 @@
   background: #a73f32;
   color: #fffaf0;
 }
+.scholarship-documents {
+  margin-top: 20px;
+  border-top: 1px dashed #c9c5b8;
+  padding-top: 14px;
+}
+.scholarship-document-link {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  border: 1px solid #24344b;
+  border-radius: 4px;
+  color: #24344b;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  overflow-wrap: anywhere;
+}
+.scholarship-document-link:hover {
+  border-color: #a73f32;
+  color: #a73f32;
+}
+.scholarship-document-host {
+  font-weight: 400;
+  opacity: 0.75;
+}
 .scholarship-ticket .scholarship-save,
 .rail-scholarship-page .scholarship-save {
   min-height: 44px;

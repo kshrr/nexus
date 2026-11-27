@@ -6,3 +6,18 @@ project_id = "nexus"
 
 [db]
 major_version = 15
+
+# Local Auth configuration. Hosted projects require the same settings in the
+# dashboard or a targeted Management API update; `db push` does not apply these.
+[auth]
+site_url = "http://localhost:5174"
+additional_redirect_urls = ["http://localhost:5174/verify", "http://localhost:5173/verify"]
+
+[auth.email]
+enable_confirmations = true
+otp_length = 6
+otp_expiry = 600
+
+[auth.email.template.confirmation]
+subject = "Confirm your Nexus email"
+content_path = "./supabase/templates/confirmation.html"

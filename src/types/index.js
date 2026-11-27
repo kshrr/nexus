@@ -34,6 +34,24 @@ export const EDUCATION_LEVEL_LABELS = Object.freeze({
 });
 
 /** @typedef {'form4_final' | 'spm_trial' | 'spm_actual'} ExamType */
+/** Optional, self-declared (migration 0036 profiles.nationality). '' = not answered. */
+export const NATIONALITY_OPTIONS = Object.freeze([
+  { value: 'malaysian', label: 'Malaysian' },
+  { value: 'non_malaysian', label: 'Not Malaysian' },
+  { value: '', label: 'Prefer not to say' },
+]);
+
+/** Optional, self-declared (migration 0039 profiles.household_income_band). '' = not answered. */
+export const INCOME_BAND_OPTIONS = Object.freeze([
+  { value: 'under_2500', label: 'Below RM2,500' },
+  { value: '2500_5000', label: 'RM2,500 – RM5,000' },
+  { value: '5000_7500', label: 'RM5,001 – RM7,500' },
+  { value: '7500_10000', label: 'RM7,501 – RM10,000' },
+  { value: '10000_15000', label: 'RM10,001 – RM15,000' },
+  { value: 'over_15000', label: 'Above RM15,000' },
+  { value: '', label: 'Prefer not to say' },
+]);
+
 export const EXAM_TYPES = /** @type {const} */ (['form4_final', 'spm_trial', 'spm_actual']);
 
 export const EXAM_TYPE_LABELS = Object.freeze({
@@ -90,6 +108,9 @@ export const RIASEC_DIMENSIONS = Object.freeze({
  * @property {EducationLevel | null} education_level
  * @property {string | null} career_goal
  * @property {string | null} target_industry
+ * @property {string | null} [nationality]
+ * @property {number | null} [birth_year]
+ * @property {string | null} [household_income_band]
  * @property {boolean} profile_completed
  * @property {string} created_at
  * @property {string} updated_at
